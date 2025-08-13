@@ -17,7 +17,7 @@ class AppLauncher:
                 with open(self.config_file, 'r') as f:
                     return json.load(f)
             except:
-                pass
+                pass 
         return {"launch_items": []}
 
     def save_config(self):
