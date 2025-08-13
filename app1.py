@@ -370,7 +370,7 @@ def main(page: ft.Page):
                             size=16,
                             text_align=ft.TextAlign.CENTER
                         ),
-                        bgcolor=ft.Colors.RED_100,
+                        bgcolor=ft.Colors.BLACK45,
                         padding=20,
                         border_radius=10,
                         border=ft.border.all(2, ft.Colors.RED_300)
