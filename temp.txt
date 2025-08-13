@@ -1,0 +1,1 @@
+pyinstaller --onefile --windowed --name "DevLauncher-Pro" --icon=launcher.ico main.py

@@ -1,0 +1,25 @@
+{
+  "launch_items": [
+    {
+      "type": "Postman",
+      "name": "New Item",
+      "path": "",
+      "browser": "chrome",
+      "enabled": true
+    },
+    {
+      "type": "Teams",
+      "name": "New Item",
+      "path": "",
+      "browser": "chrome",
+      "enabled": true
+    },
+    {
+      "type": "Outlook",
+      "name": "New Item",
+      "path": "",
+      "browser": "chrome",
+      "enabled": true
+    }
+  ]
+}

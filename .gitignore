@@ -1,0 +1,33 @@
+# Python bytecode files
+__pycache__/
+*.py[cod]
+
+# Virtual environment directories
+venv/
+env/
+.venv/
+ENV/
+
+# IDE/editor directories and files
+.vscode/
+.idea/
+*.swp
+
+# Python distribution folder
+build/
+dist/
+*.egg-info/
+
+# Test results
+*.log
+*.pot
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Flet (if any generated files or specific folders need to be ignored)
+flet_outputs/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
