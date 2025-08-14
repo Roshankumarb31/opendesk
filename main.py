@@ -7,7 +7,8 @@ import webbrowser
 
 class AppLauncher:
     def __init__(self):
-        self.config_file = "launcher_config.json"
+        documents_path = os.path.expanduser("~/Documents")
+        self.config_file = os.path.join(documents_path, "launcher_config.json")
         self.apps_config = self.load_config()
 
     def load_config(self):
@@ -17,7 +18,7 @@ class AppLauncher:
                 with open(self.config_file, 'r') as f:
                     return json.load(f)
             except:
-                pass 
+                pass
         return {"launch_items": []}
 
     def save_config(self):
@@ -181,7 +182,7 @@ class AppLauncher:
         return closed_count
 
 def main(page: ft.Page):
-    page.title = "Simple Developer Launcher"
+    page.title = "OpenDesk"
     page.window_width = 700
     page.window_height = 600
     page.theme_mode = ft.ThemeMode.DARK
@@ -236,7 +237,30 @@ def main(page: ft.Page):
             width=200,
             dense=True,
             on_change=lambda e: update_item_path(item, e.control.value)
-        )  # Fixed: Added missing closing parenthesis
+        )
+
+        # Folder/File selection button (only for non-websites)
+        def create_path_button():
+            if item.get("type") == "Website":
+                return ft.Container(width=0)  # Empty container for websites
+            
+            return ft.Row([
+                ft.IconButton(
+                    ft.Icons.FOLDER,
+                    icon_color=ft.Colors.BLUE,
+                    tooltip="Select Folder",
+                    on_click=lambda e: select_folder_path(item, path_field)
+                ),
+                ft.IconButton(
+                    ft.Icons.INSERT_DRIVE_FILE,
+                    icon_color=ft.Colors.GREEN,
+                    tooltip="Select File",
+                    on_click=lambda e: select_file_path(item, path_field)
+                )
+            ], spacing=0)
+
+        path_button = create_path_button()
+
 
         # Browser dropdown (only for websites)
         browser_dropdown = ft.Dropdown(
@@ -270,6 +294,7 @@ def main(page: ft.Page):
             type_dropdown,
             name_field,
             path_field,
+            path_button,
             browser_dropdown,
             delete_button
         ])
@@ -334,6 +359,74 @@ def main(page: ft.Page):
         """Navigate to close confirmation page"""
         show_close_confirmation_page()
 
+
+    def toggle_select_all(e):
+        """Toggle between Select All and Deselect All"""
+        if not launcher.apps_config["launch_items"]:
+            return
+        
+        # Check if all items are currently enabled
+        all_enabled = all(item.get("enabled", True) for item in launcher.apps_config["launch_items"])
+        
+        # If all enabled, disable all. If any disabled, enable all
+        new_state = not all_enabled
+        
+        # Update all items
+        for item in launcher.apps_config["launch_items"]:
+            item["enabled"] = new_state
+        
+        # Update button text based on new state
+        button_text = "☐ Deselect All" if new_state else "☑️ Select All"
+        e.control.text = button_text
+        
+        # Save config and refresh UI
+        launcher.save_config()
+        refresh_ui()
+        
+        # Update status
+        action = "Selected" if new_state else "Deselected"
+        count = len(launcher.apps_config["launch_items"])
+        update_status(f"{action} all {count} items", ft.Colors.BLUE)
+
+
+
+    def select_folder_path(item, path_field):
+        """Open folder selection dialog and update the path field"""
+        def pick_folder_result(e: ft.FilePickerResultEvent):
+            if e.path:
+                item["path"] = e.path
+                path_field.value = e.path
+                launcher.save_config()
+                page.update()
+        
+        # Create file picker
+        pick_folder_dialog = ft.FilePicker(on_result=pick_folder_result)
+        page.overlay.append(pick_folder_dialog)
+        page.update()
+        
+        # Open folder selection dialog
+        pick_folder_dialog.get_directory_path(dialog_title="Select Folder")
+
+    def select_file_path(item, path_field):
+        """Open file selection dialog and update the path field"""
+        def pick_file_result(e: ft.FilePickerResultEvent):
+            if e.files:
+                selected_path = e.files[0].path
+                item["path"] = selected_path
+                path_field.value = selected_path
+                launcher.save_config()
+                page.update()
+        
+        # Create file picker
+        pick_file_dialog = ft.FilePicker(on_result=pick_file_result)
+        page.overlay.append(pick_file_dialog)
+        page.update()
+        
+        # Open file selection dialog
+        pick_file_dialog.pick_files(dialog_title="Select File", allow_multiple=False)
+
+
+
     def show_close_confirmation_page():
         """Show a separate page for close confirmation"""
         # Clear the current page
@@ -346,9 +439,9 @@ def main(page: ft.Page):
                     # Header
                     ft.Container(height=50),  # Spacer
                     ft.Text("⚠️ Close All Applications", 
-                           size=32, 
-                           weight=ft.FontWeight.BOLD,
-                           text_align=ft.TextAlign.CENTER),
+                            size=32, 
+                            weight=ft.FontWeight.BOLD,
+                            text_align=ft.TextAlign.CENTER),
                     
                     ft.Container(height=30),  # Spacer
                     
@@ -481,7 +574,7 @@ def main(page: ft.Page):
             ft.Container(
                 content=ft.Column([
                     # Title
-                    ft.Text("🚀 Simple Developer Launcher",
+                    ft.Text("ϟ OpenDesk",
                             size=24, weight=ft.FontWeight.BOLD),
                     ft.Divider(),
                     
@@ -498,6 +591,10 @@ def main(page: ft.Page):
                         ft.ElevatedButton("➕ Add New Item",
                                         on_click=add_new_item,
                                         bgcolor=ft.Colors.BLUE,
+                                        color=ft.Colors.WHITE),
+                        ft.ElevatedButton("☑️ Select All",
+                                        on_click=toggle_select_all,
+                                        bgcolor=ft.Colors.PURPLE,
                                         color=ft.Colors.WHITE),
                     ]),
                     ft.Divider(),

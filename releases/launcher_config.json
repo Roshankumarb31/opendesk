@@ -1,0 +1,39 @@
+{
+  "launch_items": [
+    {
+      "type": "VS Code",
+      "name": "ob frontend",
+      "path": "D:\\Roshan\\order_bot",
+      "browser": "chrome",
+      "enabled": true
+    },
+    {
+      "type": "VS Code",
+      "name": "ob backend",
+      "path": "D:\\Orderbot_backend\\fastapi_backend",
+      "browser": "chrome",
+      "enabled": true
+    },
+    {
+      "type": "Website",
+      "name": "perplexity",
+      "path": "https://www.perplexity.ai/",
+      "browser": "chrome",
+      "enabled": true
+    },
+    {
+      "type": "File Explorer",
+      "name": "obf folder",
+      "path": "D:\\Orderbot_backend\\fastapi_backend",
+      "browser": "chrome",
+      "enabled": true
+    },
+    {
+      "type": "File Explorer",
+      "name": "obb folder",
+      "path": "D:\\Roshan\\order_bot",
+      "browser": "chrome",
+      "enabled": true
+    }
+  ]
+}
