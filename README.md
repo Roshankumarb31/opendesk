@@ -41,7 +41,7 @@ A slick, ultra-fast desktop launcher for developers—built with Python and Flet
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/your-username/OpenDesk.git
+git clone https://github.com/Roshankumarb31/OpenDesk.git
 cd OpenDesk
 pip install flet psutil
 python main.py
