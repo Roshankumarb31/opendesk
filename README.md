@@ -1,126 +1,177 @@
-![OpenDesk Logo](assets/repo_logo.png) 🚀 OpenDesk: The Ultimate Developer Launcher
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+*** 
 
-A slick, ultra-fast desktop launcher for developers—built with Python and Flet. Launch your favorite tools, terminals, and websites with a single click, all in a modern dark UI.
+<p align="center"> <img src="assets/repo_logo.png" alt="OpenDesk Logo"> </p> <h1 align="center">OpenDesk — The Ultimate Developer Launcher</h1> <p align="center"> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a> <img src="https://img.shields.io/badge/Python-3.7%2B-yellow" alt="Python 3.7+"> <a href="https://flet.dev"><img src="https://img.shields.io/badge/UI-Flet-4B8CFF.svg" alt="Flet UI"></a> <a href="#-contributing"><img src="https://img.shields.io/badge/Contributions-Welcome-brightgreen" alt="Contributions Welcome"></a> </p>
 
-***
+### What is OpenDesk?  
 
-## ✨ Features
+**OpenDesk** is a sleek, ultra-fast desktop launcher built **for developers by developers**.  
+Spin up your **favorite tools, terminals, IDEs, browsers, and websites** in seconds — all from a beautiful **dark-mode interface**.  
 
-- **Multi-App Quick Launch**
-  - VS Code (with project folder)
-  - File Explorer (pick a directory)
-  - Command Prompt & PowerShell (custom working directory)
-  - Open websites in Chrome, Edge, Brave, or Firefox (normal/incognito)
-  - Microsoft Teams, Outlook, MongoDB Compass, GitHub Desktop, Postman, Notepad
-
-- **Total Customization**
-  - Add, remove, enable, or disable apps as you like
-  - Set custom names and icons
-  - Assign browser per website item
-
-- **Bulk Developer Actions**
-  - Launch all enabled apps at once
-  - Close all running developer tools with a confirmation
-
-- **Instant Save & Restore**
-  - Config auto-saved as `launcher_config.json` in your Documents
-
-- **Polished Dark Mode**
-  - Clean, focused UI for long dev sessions
+Think of it as your **developer control center** 🖥️. One click, and you're ready to code.  
 
 ***
 
-## 🛠️ Requirements
+## 🔥 Features  
 
-- **Windows 10/11**
-- **Python 3.7+**
-- **pip install flet psutil**
+✅ **Multi-App Quick Launch**  
+- VS Code with projects  
+- File Explorer at custom paths  
+- Command Prompt / PowerShell in chosen directories  
+- Open websites in Chrome, Edge, Brave, or Firefox (normal/incognito)  
+- Teams, Outlook, MongoDB Compass, GitHub Desktop, Postman, Notepad  
+
+✅ **Totally Customizable**  
+- Add / remove apps anytime  
+- Rename, re-icon, toggle enable/disable  
+- Website: choose browser + incognito on/off  
+
+✅ **One-Click Dev Environment**  
+- 🚀 Launch all enabled apps  
+- ❌ Close all dev tools instantly  
+
+✅ **Smart Config**  
+- Auto-saves settings into `launcher_config.json`  
+- Restores your environment in seconds  
+
+✅ **Beautiful Dark Mode**  
+- Modern, clean UI designed for long coding sessions  
 
 ***
 
-## 📦 Installation
+## 📂 Repository Structure  
 
+
+## Repository Structure  
 ```bash
-git clone https://github.com/Roshankumarb31/OpenDesk.git
-cd OpenDesk
+OpenDesk/
+├── assets/                   # Logos, icons, branding
+│   ├── launcher.ico
+│   ├── LOGO-LICENSE.md
+│   └── repo_logo.png
+│
+├── docs/                     # Documentation
+│   └── build.md
+│
+├── releases/                 # Pre-built .exe releases
+│   └── OpenDesk_v*.exe
+│
+├── spec_files/               # PyInstaller spec files
+│   └── *.spec
+│
+├── .github/                  # GitHub templates
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── ISSUE_TEMPLATE/
+│       ├── bug_report.md
+│       └── feature_request.md
+│
+├── .gitignore
+├── requirements.txt
+├── app_launcher.py
+├── CODE_OF_CONDUCT.md
+├── config_manager.py
+├── confirmation_dialogs.py
+├── CONTRIBUTING.md
+├── LICENSE
+├── main.py
+├── NOTICE
+├── README.md
+├── SECURITY.md
+├── startup_manager.py
+├── ui_manager.py
+└── utils.py
+
+```
+
+***
+
+## ⚡ Quick Start (Developers)  
+
+### Requirements  
+- Windows 10/11  
+- Python **3.7+**  
+
+Install dependencies:  
+```bash
 pip install flet psutil
+```
+
+Run locally:  
+```bash
+git clone https://github.com/Roshankumarb31/opendesk
+cd OpenDesk
 python main.py
 ```
-
-***
-
-## 🎮 Usage
-
-- **Add Launch Item:**  
-  Click ➕ Add New, choose Type, set Name, pick a Path or URL, choose browser (if website), and toggle Enable.
-- **Launch:**  
-  Hit 🚀 Launch Selected to start all enabled tools instantly.
-- **Close:**  
-  Use ❌ Close All for a clean dev slate (confirmation included).
-- **All settings and app lists are auto-saved.**
-
-***
-
-## ⚡ Supported App Types
-
-| Type            | Description                      | Path/URL Usage (optional unless website) |
-|-----------------|----------------------------------|------------------------------------------|
-| VS Code         | Visual Studio Code               | Folder (project)                         |
-| File Explorer   | File browser                     | Directory                                |
-| Command Prompt  | Windows CMD                      | Directory                                |
-| PowerShell      | Powershell terminal              | Directory                                |
-| Website         | Any URL, custom browser          | Required: Website URL                    |
-| Teams           | Microsoft Teams (app)            | —                                        |
-| Outlook         | Microsoft Outlook (app)          | —                                        |
-| MongoDB Compass | MongoDB Compass GUI              | —                                        |
-| GitHub Desktop  | GitHub Desktop                   | —                                        |
-| Postman         | Postman API client               | —                                        |
-| Notepad         | Classic Notepad                  | —                                        |
-
-***
-
-## 🗂️ File Structure
-
+Build from source (short):
+```bash
+pip install pyinstaller
+pyinstaller --onefile --windowed --name "OpenDesk_v1.0.0" --icon=assets/launcher.ico main.py
 ```
-OpenDesk/
-├── main.py
-├── ui_manager.py
-├── app_launcher.py
-├── config_manager.py
-├── startup_manager.py
-├── confirmation_dialogs.py
-├── utils.py
-├── assets/
-│   └── repo_logo.jpg
-├── launcher_config.json   # auto-generated
-└── README.md
-```
+Full guide: see docs/build.md
 
 ***
 
-## ⚠️ Important
+## 📦 Pre-Built Binaries  
 
-- **Windows Only:** Built exclusively for Windows desktop.
-- **Safe Closing:** Only developer/launcher apps are closed, not system processes.
-- **App Paths:** Common install paths auto-detected; custom installs may require tweaks.
+💡 You don’t need Python to run OpenDesk!  
+Check the **[releases](./releases/)** folder for downloadable `.exe` builds.  
 
-***
-
-## 🤝 Contributing
-
-PRs & issues welcome! Ideas:
-- More app types
-- Global hotkeys
-- Launcher categories/groups
-- Cross-platform support
+- Portable `.exe` → Just run and go.  
+- Startup toggle → Auto-launch with Windows (optional).  
 
 ***
 
-## 📄 License
+## 🎯 Usage  
 
-MIT License — see [LICENSE](LICENSE).
+- ➕ **Add App:** Fill type, name, path/URL, and browser if needed.  
+- 🚀 **Launch Selected:** Start all checked apps.  
+- ❌ **Close All:** Shut down launched dev tools.  
+- 🗑️ **Delete All:** Reset your launcher setup.  
+
+Everything is **auto-saved** — no manual config files needed.  
 
 ***
 
-> **Created with ❤️ for the dev community. Your workflow—launched in one click.**
+## 🤝 Open Collaboration  
+
+This repo is meant for **community collaboration** 💡.  
+We’re building OpenDesk together — for devs, by devs.  
+
+### How to Contribute?  
+1. 🍴 Fork this repo  
+2. 🌱 Create a feature branch  
+3. 💻 Add your improvements (new app type, UI polish, shortcuts, etc.)  
+2. 🔄 Submit a Pull Request  
+
+### Ideas to Build Together:  
+- 🔑 Global hotkeys  
+- 📂 App categories/groups  
+- 🌍 Linux / macOS support  
+- 🎨 Theme customization  
+- ⏳ Better session restore  
+
+> Your suggestions and pull requests are always welcome!  
+
+***
+
+## 🛡️ License  
+
+MIT License © 2025 [Roshan Kumar B](LICENSE)  
+
+Free to use, modify, and share.  
+
+***
+
+## Attribution and Branding
+- OpenDesk is an open-collaboration project. Please retain original credit and license in forks and redistributions.  
+- The name “OpenDesk” and the OpenDesk logo are project branding assets. Do not imply official affiliation or endorsement without permission. See assets/LOGO-LICENSE.md.
+
+***
+## ❤️ Acknowledgements  
+
+- UI powered by [Flet](https://flet.dev)  
+- System management via [psutil](https://github.com/giampaolo/psutil)  
+- Inspired by devs who want their **workflow in a single click**  
+
+> 🚀 Built with ❤️ for the developer community.  
+
+***
