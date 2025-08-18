@@ -14,6 +14,10 @@ class UIManager:
         self.status_text = ft.Text("Ready!", color="#B4BACC", size=12, weight=ft.FontWeight.W_500)
         self.confirmation_page = ConfirmationPage(page, self)
 
+        self.file_picker = ft.FilePicker(on_result=self.on_folder_selected)
+        self.page.overlay.append(self.file_picker)
+        self.current_item = None  # Track which item we're updating
+
         # Dark theme palette
         self.Colors = {
             'bg': '#16171C',        # page background
@@ -80,6 +84,59 @@ class UIManager:
             )
         )
 
+
+
+    def on_folder_selected(self, e: ft.FilePickerResultEvent):
+        if e.path and self.current_item:
+            # Update the path field with selected folder/file
+            self.current_item["path"] = e.path
+            self.config_manager.save_config(self.config)
+            self.refresh_ui()
+            self.update_status(f"Selected: {e.path}", self.Colors['primary'])
+
+    def create_app_row(self, item, index):
+        app_icon = AppIcons.get_icon(item.get("type", "VS Code"))
+        enabled = item.get("enabled", True)
+        
+        # Check if this type needs folder browsing
+        needs_folder_browse = item.get("type", "") in [
+            "VS Code", "File Explorer", "Command Prompt", "PowerShell"
+        ]
+        
+        return ft.Container(
+            content=ft.Row([
+                # ... your existing controls (icon, name, dropdown) ...
+                
+                # Path field with browse button
+                ft.Row([
+                    ft.TextField(
+                        value=item.get("path", ""),
+                        hint_text="Path/URL",
+                        width=140 if needs_folder_browse else 180,
+                        bgcolor=self.Colors['gray'],
+                        border_color="transparent",
+                        color=self.Colors['text'],
+                        text_size=13,
+                        on_change=lambda e: self.update_item_path(item, e.control.value)
+                    ),
+                    # Add browse button for specific types
+                    ft.IconButton(
+                        icon=ft.Icons.FOLDER_OPEN,
+                        tooltip="Browse Folder",
+                        icon_color=self.Colors['primary'],
+                        bgcolor=self.Colors['surface'],
+                        visible=needs_folder_browse,
+                        on_click=lambda e: self.browse_folder(item)
+                    ) if needs_folder_browse else ft.Container(width=0)
+                ], spacing=5),
+                
+                # ... rest of your existing controls (switch, play, delete) ...
+                
+            ], spacing=12),
+            # ... rest of your container properties ...
+        )
+
+
     def create_startup_panel(self):
         return ft.Container(
             content=ft.Row([
@@ -107,7 +164,7 @@ class UIManager:
                 ft.ElevatedButton(
                     content=ft.Row([
                         ft.Icon(ft.Icons.ROCKET_LAUNCH, color="#000000", size=16),
-                        ft.Text("Launch All", color="#000000", size=13, weight=ft.FontWeight.W_500)
+                        ft.Text("Launch Selected", color="#000000", size=13, weight=ft.FontWeight.W_500)
                     ], spacing=6, tight=True),
                     bgcolor=self.Colors['primary'],
                     color="#000",
@@ -159,10 +216,15 @@ class UIManager:
         )
 
 
-
     def create_app_row(self, item, index):
         app_icon = AppIcons.get_icon(item.get("type", "VS Code"))
         enabled = item.get("enabled", True)
+        
+        # Check if this type needs folder browsing
+        needs_folder_browse = item.get("type", "") in [
+            "VS Code", "File Explorer", "Command Prompt", "PowerShell"
+        ]
+        
         return ft.Container(
             content=ft.Row([
                 ft.Container(
@@ -185,31 +247,40 @@ class UIManager:
                 ft.Dropdown(
                     value=item.get("type", "VS Code"),
                     options=[ft.dropdown.Option(
-                        key=t, 
-                        text=t, 
-                        text_style=ft.TextStyle(color="#A59E9E")  # Force white text
+                        key=t,
+                        text=t,
+                        text_style=ft.TextStyle(color="#A59E9E")
                     ) for t in ["VS Code", "File Explorer", "Command Prompt", "PowerShell",
                             "Website", "Teams", "Outlook", "MongoDB Compass",
                             "GitHub Desktop", "Postman", "Notepad"]],
                     width=120,
                     bgcolor=self.Colors['gray'],
                     border_color="transparent",
-                    color=self.Colors['dropdown_text'],  # Force white for selected text
+                    color=self.Colors['dropdown_text'],
                     text_style=ft.TextStyle(color=self.Colors['dropdown_text']),
                     on_change=lambda e: self.update_item_type(item, e.control.value, index)
                 ),
-
-
-                ft.TextField(
-                    value=item.get("path", ""),
-                    hint_text="Path/URL",
-                    width=180,
-                    bgcolor=self.Colors['gray'],
-                    border_color="transparent",
-                    color=self.Colors['text'],
-                    text_size=13,
-                    on_change=lambda e: self.update_item_path(item, e.control.value)
-                ),
+                # Path field with browse button
+                ft.Row([
+                    ft.TextField(
+                        value=item.get("path", ""),
+                        hint_text="Path/URL",
+                        width=140 if needs_folder_browse else 180,
+                        bgcolor=self.Colors['gray'],
+                        border_color="transparent",
+                        color=self.Colors['text'],
+                        text_size=13,
+                        on_change=lambda e: self.update_item_path(item, e.control.value)
+                    ),
+                    # Add browse button for specific types
+                    ft.IconButton(
+                        icon=ft.Icons.FOLDER_OPEN,
+                        tooltip="Browse Folder",
+                        icon_color=self.Colors['primary'],
+                        bgcolor=self.Colors['surface'],
+                        on_click=lambda e: self.browse_folder(item)
+                    ) if needs_folder_browse else ft.Container(width=0)
+                ], spacing=5),
                 ft.Switch(
                     value=enabled,
                     scale=0.8,
@@ -242,6 +313,34 @@ class UIManager:
             ),
             margin=ft.margin.only(bottom=5)
         )
+
+
+
+
+
+
+
+    def browse_folder(self, item):
+        self.current_item = item
+        item_type = item.get("type", "")
+        
+        if item_type == "File Explorer":
+            # For File Explorer, select a directory
+            self.file_picker.get_directory_path(
+                dialog_title="Select Folder to Open"
+            )
+        elif item_type in ["VS Code", "Command Prompt", "PowerShell"]:
+            # For these, also select directory (they can open in specific folders)
+            self.file_picker.get_directory_path(
+                dialog_title=f"Select Folder for {item_type}"
+            )
+        else:
+            # For other types, pick files
+            self.file_picker.pick_files(
+                dialog_title="Select File",
+                allow_multiple=False
+            )
+
 
     def show_main_page(self):
         self.page.controls.clear()
