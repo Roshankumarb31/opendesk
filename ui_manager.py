@@ -1,6 +1,5 @@
 import flet as ft
 from utils import AppIcons, format_path_display
-import asyncio
 
 class UIManager:
     def __init__(self, page, config_manager, app_launcher, startup_manager, config):
@@ -11,490 +10,463 @@ class UIManager:
         self.config = config
 
         # UI state
-        self.items_column = ft.Column(spacing=8)
-        self.status_text = ft.Text("Ready", color=ft.Colors.GREEN_400, size=12)
-        self.search_field = ft.TextField(
-            hint_text="🔍 Quick search...",
-            width=300,
-            dense=True,
-            border_radius=25,
-            bgcolor="#1a1a1a",
-            border_color="#333333",
-            focused_border_color="#0078d4",
-            on_change=self.filter_items
+        self.items_grid = ft.GridView(
+            expand=True,
+            runs_count=3,
+            max_extent=280,
+            child_aspect_ratio=1.2,
+            spacing=20,
+            run_spacing=20,
         )
-
-        # Modern color scheme
-        self.Colors = {
-            'primary': '#0078d4',
-            'success': '#00c851',
-            'warning': '#ffb900',
-            'danger': '#dc3545',
-            'dark': '#121212',
-            'surface': '#1e1e1e',
-            'surface_variant': '#2a2a2a',
-            'outline': '#3a3a3a',
+        self.status_text = ft.Text("Ready to launch! 🚀", color="#10b981", size=13, weight=ft.FontWeight.W_500)
+        
+        # Futuristic color palette
+        self.colors = {
+            'bg_primary': '#0a0e27',
+            'bg_secondary': '#1a1d3a',
+            'sidebar': '#151831',
+            'card_bg': '#1e2139',
+            'accent_blue': '#4facfe',
+            'accent_purple': '#8b5cf6',
+            'accent_pink': '#ec4899',
+            'accent_green': '#10b981',
+            'accent_orange': '#f59e0b',
             'text_primary': '#ffffff',
-            'text_secondary': '#b0b0b0'
+            'text_secondary': '#94a3b8',
+            'border': '#2d3748'
         }
 
     def setup_ui(self):
-        """Initialize the main UI with performance optimizations"""
-        # Page configuration
-        self.page.title = "⚡ OpenDesk Pro"
-        self.page.window_width = 1000
-        self.page.window_height = 700
+        """Initialize the stunning main UI"""
+        self.page.title = "⚡ OpenDesk - Ultimate Launcher"
+        self.page.window_width = 1400
+        self.page.window_height = 800
         self.page.theme_mode = ft.ThemeMode.DARK
-        self.page.bgcolor = self.Colors['dark']
+        self.page.bgcolor = self.colors['bg_primary']
         self.page.padding = 0
-        
-        # Enable smooth animations
-        self.page.theme = ft.Theme(
-            visual_density=ft.VisualDensity.COMPACT,
-            color_scheme=ft.ColorScheme(
-                primary=self.Colors['primary'],
-                surface=self.Colors['surface'],
-                background=self.Colors['dark']
-            )
-        )
         
         self.show_main_page()
 
-    def update_status(self, message, color=None):
-        """Optimized status update with debouncing"""
-        if color is None:
-            color = self.Colors['success']
-        
-        self.status_text.value = message
-        self.status_text.color = color
-        
-        # Use update() sparingly for better performance
-        self.status_text.update()
-
-    def create_header(self):
-        """Create modern header with glassmorphism effect"""
+    def create_sidebar(self):
+        """Create stunning sidebar with navigation - FIXED VERSION"""
         return ft.Container(
-            content=ft.Row([
-                # Logo and title
-                ft.Row([
-                    ft.Container(
-                        content=ft.Text("⚡", size=28, color="#ffffff"),
-                        bgcolor=self.Colors['primary'],
-                        border_radius=12,
-                        padding=8,
-                        shadow=ft.BoxShadow(
-                            spread_radius=0,
-                            blur_radius=8,
-                            color=f"{self.Colors['primary']}40",
-                            offset=ft.Offset(0, 2)
-                        )
-                    ),
-                    ft.Column([
-                        ft.Text("OpenDesk Pro", size=20, weight=ft.FontWeight.BOLD, color=self.Colors['text_primary']),
-                        ft.Text("Smart Application Launcher", size=11, color=self.Colors['text_secondary'])
-                    ], spacing=2)
-                ], spacing=12),
-                
-                # Search and controls
-                ft.Row([
-                    self.search_field,
-                    self.create_icon_button(
-                        ft.Icons.REFRESH, 
-                        "Refresh", 
-                        self.refresh_ui,
-                        color=self.Colors['warning']
-                    ),
-                    self.create_icon_button(
-                        ft.Icons.SETTINGS, 
-                        "Settings", 
-                        self.show_settings,
-                        color=self.Colors['text_secondary']
-                    )
-                ], spacing=8)
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            padding=20,
-            bgcolor=f"{self.Colors['surface']}dd",
-            border=ft.border.only(bottom=ft.BorderSide(1, self.Colors['outline']))
-        )
-
-    def create_action_bar(self):
-        """Create modern action bar with smooth hover effects"""
-        return ft.Container(
-            content=ft.Row([
-                self.create_modern_button(
-                    "🚀 Launch All", 
-                    self.launch_selected, 
-                    self.Colors['success']
-                ),
-                self.create_modern_button(
-                    "❌ Close All", 
-                    self.close_all, 
-                    self.Colors['danger']
-                ),
-                self.create_modern_button(
-                    "➕ Add Item", 
-                    self.add_new_item, 
-                    self.Colors['primary']
-                ),
-                self.create_modern_button(
-                    "☑️ Toggle All", 
-                    self.toggle_select_all, 
-                    "#6f42c1"
-                ),
-            ], spacing=12, wrap=True),
-            padding=ft.padding.symmetric(horizontal=20, vertical=12),
-            bgcolor=self.Colors['surface']
-        )
-
-    def create_startup_panel(self):
-        """Create elegant startup control panel"""
-        return ft.Container(
-            content=ft.Row([
+            width=280,
+            bgcolor=self.colors['sidebar'],
+            content=ft.Column([
+                # Logo section
                 ft.Container(
-                    content=ft.Icon(ft.Icons.POWER_SETTINGS_NEW, color=self.Colors['warning'], size=20),
-                    bgcolor=f"{self.Colors['warning']}20",
-                    border_radius=8,
-                    padding=8
+                    content=ft.Column([
+                        ft.Row([
+                            ft.Container(
+                                content=ft.Text("⚡", size=32, color="#ffffff"),
+                                width=60, height=60,
+                                bgcolor=self.colors['accent_blue'],  # Simplified gradient
+                                border_radius=16,
+                                alignment=ft.alignment.center,
+                                shadow=ft.BoxShadow(
+                                    spread_radius=0,
+                                    blur_radius=20,
+                                    color=f"{self.colors['accent_blue']}40",
+                                    offset=ft.Offset(0, 8)
+                                )
+                            ),
+                            ft.Column([
+                                ft.Text("OpenDesk", size=24, weight=ft.FontWeight.BOLD, color=self.colors['text_primary']),
+                                ft.Text("Ultimate Launcher", size=12, color=self.colors['accent_blue'])
+                            ], spacing=2, expand=True)  # FIXED: Added expand=True instead of flex
+                        ], spacing=16),
+                        
+                        # Quick stats
+                        ft.Container(
+                            content=ft.Row([
+                                ft.Container(
+                                    content=ft.Column([
+                                        ft.Text(str(len(self.config.get('launch_items', []))), 
+                                               size=28, weight=ft.FontWeight.BOLD, color=self.colors['accent_green']),
+                                        ft.Text("Apps", size=11, color=self.colors['text_secondary'])
+                                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2),
+                                    expand=True  # FIXED: Changed flex=1 to expand=True
+                                ),
+                                ft.Container(width=1, height=40, bgcolor=self.colors['border']),
+                                ft.Container(
+                                    content=ft.Column([
+                                        ft.Text("✨", size=20),
+                                        ft.Text("Ready", size=11, color=self.colors['text_secondary'])
+                                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=2),
+                                    expand=True  # FIXED: Changed flex=1 to expand=True
+                                )
+                            ]),
+                            bgcolor=f"{self.colors['card_bg']}80",
+                            border_radius=12,
+                            padding=16,
+                            margin=ft.margin.only(top=20)
+                        )
+                    ]),
+                    padding=24
                 ),
-                ft.Text("Auto-start with Windows", 
-                       color=self.Colors['text_primary'], 
-                       size=14, 
-                       weight=ft.FontWeight.W_500),
-                ft.Switch(
-                    value=self.startup_manager.is_in_startup(),
-                    on_change=self.toggle_startup,
-                    active_color=self.Colors['success'],
-                    inactive_track_color=self.Colors['outline']
+
+                # Navigation items
+                ft.Container(
+                    content=ft.Column([
+                        self.create_nav_item("🏠", "Dashboard", True),
+                        self.create_nav_item("⚙️", "Settings", False),
+                        self.create_nav_item("📊", "Analytics", False),
+                        self.create_nav_item("🎨", "Themes", False),
+                    ]),
+                    padding=ft.padding.symmetric(horizontal=16)
+                ),
+
+                # Startup toggle in sidebar
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text("Quick Controls", size=14, weight=ft.FontWeight.W_600, color=self.colors['text_secondary']),
+                        ft.Container(height=8),
+                        ft.Container(
+                            content=ft.Row([
+                                ft.Icon(ft.Icons.ROCKET_LAUNCH, color=self.colors['accent_orange'], size=20),
+                                ft.Column([
+                                    ft.Text("Auto-start", size=13, weight=ft.FontWeight.W_500, color=self.colors['text_primary']),
+                                    ft.Text("Launch with Windows", size=10, color=self.colors['text_secondary'])
+                                ], spacing=0, expand=True),
+                                ft.Switch(
+                                    value=self.startup_manager.is_in_startup(),
+                                    on_change=self.toggle_startup,
+                                    active_color=self.colors['accent_green'],
+                                    scale=0.8
+                                )
+                            ]),
+                            bgcolor=f"{self.colors['card_bg']}60",
+                            border_radius=12,
+                            padding=12,
+                            border=ft.border.all(1, f"{self.colors['border']}40")
+                        )
+                    ]),
+                    padding=16,
+                    margin=ft.margin.only(top=20)
+                ),
+
+                # Status section
+                ft.Container(
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.CIRCLE, color=self.colors['accent_green'], size=8),
+                        self.status_text
+                    ], spacing=8),
+                    padding=16,
+                    margin=ft.margin.only(top=20)
                 )
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            bgcolor=f"{self.Colors['surface_variant']}80",
-            border_radius=12,
-            padding=16,
-            margin=ft.margin.symmetric(horizontal=20, vertical=8),
-            border=ft.border.all(1, self.Colors['outline']),
+            ], spacing=0),
             shadow=ft.BoxShadow(
                 spread_radius=0,
-                blur_radius=4,
-                color="#00000020",
-                offset=ft.Offset(0, 2)
+                blur_radius=30,
+                color="#00000030",
+                offset=ft.Offset(8, 0)
             )
         )
 
-    def create_modern_button(self, text, on_click, color, width=None):
-        """Create modern button with hover animation"""
+    def create_nav_item(self, icon, text, active=False):
+        """Create navigation item"""
+        return ft.Container(
+            content=ft.Row([
+                ft.Text(icon, size=18),
+                ft.Text(text, size=14, weight=ft.FontWeight.W_500, 
+                       color=self.colors['text_primary'] if active else self.colors['text_secondary'])
+            ], spacing=12),
+            bgcolor=f"{self.colors['accent_blue']}20" if active else "transparent",
+            border_radius=12,
+            padding=ft.padding.symmetric(horizontal=16, vertical=12),
+            margin=ft.margin.only(bottom=4),
+            border=ft.border.all(1, f"{self.colors['accent_blue']}40" if active else "transparent")
+        )
+
+    def create_header(self):
+        """Create main content header"""
+        return ft.Container(
+            content=ft.Row([
+                ft.Column([
+                    ft.Text("Your Applications", size=28, weight=ft.FontWeight.BOLD, color=self.colors['text_primary']),
+                    ft.Text("Launch your favorite apps with style ✨", size=14, color=self.colors['text_secondary'])
+                ], spacing=4),
+                
+                ft.Row([
+                    # Search bar
+                    ft.Container(
+                        content=ft.TextField(
+                            hint_text="🔍 Search apps...",
+                            hint_style=ft.TextStyle(color=self.colors['text_secondary'], size=14),
+                            color=self.colors['text_primary'],
+                            border_color="transparent",
+                            bgcolor=f"{self.colors['card_bg']}80",
+                            width=300,
+                            height=45,
+                            border_radius=25,
+                            content_padding=ft.padding.symmetric(horizontal=20, vertical=12),
+                            on_change=self.filter_items
+                        )
+                    ),
+                    
+                    # Action buttons
+                    self.create_gradient_button("🚀 Launch All", self.launch_selected, self.colors['accent_green']),
+                    self.create_gradient_button("➕ Add App", self.add_new_item, self.colors['accent_blue']),
+                    self.create_icon_btn(ft.Icons.REFRESH, self.refresh_ui, self.colors['accent_orange']),
+                ], spacing=12)
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+            padding=32,
+            bgcolor=f"{self.colors['bg_secondary']}80"
+        )
+
+    def create_gradient_button(self, text, on_click, color):
+        """Create gradient button - simplified"""
         return ft.Container(
             content=ft.Text(text, color="#ffffff", size=13, weight=ft.FontWeight.W_600),
             bgcolor=color,
-            border_radius=8,
-            padding=ft.padding.symmetric(horizontal=16, vertical=10),
-            width=width,
+            border_radius=12,
+            padding=ft.padding.symmetric(horizontal=20, vertical=12),
             on_click=on_click,
-            ink=True,
-            animate=ft.Animation(150, ft.AnimationCurve.EASE_OUT),
             shadow=ft.BoxShadow(
                 spread_radius=0,
-                blur_radius=6,
+                blur_radius=15,
                 color=f"{color}40",
-                offset=ft.Offset(0, 2)
+                offset=ft.Offset(0, 4)
             ),
-            on_hover=self.create_hover_handler(color)
+            animate=ft.Animation(200, ft.AnimationCurve.EASE_OUT)
         )
 
-    def create_hover_handler(self, color):
-        """Create hover effect handler"""
-        def handle_hover(e):
-            if e.data == "true":
-                e.control.shadow = ft.BoxShadow(
-                    spread_radius=0,
-                    blur_radius=12,
-                    color=f"{color}60",
-                    offset=ft.Offset(0, 4)
-                )
-                e.control.scale = 1.02
-            else:
-                e.control.shadow = ft.BoxShadow(
-                    spread_radius=0,
-                    blur_radius=6,
-                    color=f"{color}40",
-                    offset=ft.Offset(0, 2)
-                )
-                e.control.scale = 1.0
-            e.control.update()
-        return handle_hover
+    def create_icon_btn(self, icon, on_click, color):
+        """Create icon button"""
+        return ft.Container(
+            content=ft.Icon(icon, color="#ffffff", size=20),
+            width=45, height=45,
+            bgcolor=color,
+            border_radius=12,
+            on_click=on_click,
+            alignment=ft.alignment.center,
+            shadow=ft.BoxShadow(
+                spread_radius=0,
+                blur_radius=10,
+                color=f"{color}40",
+                offset=ft.Offset(0, 4)
+            )
+        )
 
-    def create_icon_button(self, icon, tooltip, on_click, color=None):
-        """Create modern icon button"""
-        if color is None:
-            color = self.Colors['text_secondary']
+    def create_app_card(self, item, index):
+        """Create stunning app card"""
+        app_icon = AppIcons.get_icon(item.get("type", "VS Code"))
+        is_enabled = item.get("enabled", True)
+        
+        # Dynamic colors based on app type
+        card_colors = {
+            "VS Code": self.colors['accent_blue'],
+            "Website": self.colors['accent_purple'],
+            "File Explorer": self.colors['accent_green'],
+            "Command Prompt": "#1f2937",
+            "Teams": "#6366f1"
+        }
+        
+        card_color = card_colors.get(item.get("type", "VS Code"), self.colors['accent_blue'])
         
         return ft.Container(
-            content=ft.Icon(icon, color=color, size=18),
-            bgcolor=f"{color}15",
-            border_radius=8,
-            padding=8,
-            tooltip=tooltip,
-            on_click=on_click,
-            animate=ft.Animation(100, ft.AnimationCurve.EASE_OUT),
-            on_hover=lambda e: self.icon_hover_effect(e, color)
+            content=ft.Column([
+                # Card header with icon and status
+                ft.Row([
+                    ft.Container(
+                        content=ft.Text(app_icon, size=24),
+                        width=50, height=50,
+                        bgcolor=f"{card_color}20",
+                        border_radius=12,
+                        alignment=ft.alignment.center
+                    ),
+                    ft.Switch(
+                        value=is_enabled,
+                        on_change=lambda e: self.update_item_enabled(item, e.control.value),
+                        active_color=self.colors['accent_green'],
+                        scale=0.8
+                    )
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+
+                # App name
+                ft.TextField(
+                    value=item.get("name", ""),
+                    hint_text="App name",
+                    color=self.colors['text_primary'],
+                    bgcolor="transparent",
+                    border_color="transparent",
+                    text_size=16,
+                    text_style=ft.TextStyle(weight=ft.FontWeight.W_600),  # Fixed: Use text_style instead
+                    on_change=lambda e: self.update_item_name(item, e.control.value)
+                ),
+
+                # App type
+                ft.Dropdown(
+                    value=item.get("type", "VS Code"),
+                    options=[
+                        ft.dropdown.Option("VS Code"),
+                        ft.dropdown.Option("File Explorer"),
+                        ft.dropdown.Option("Command Prompt"),
+                        ft.dropdown.Option("PowerShell"),
+                        ft.dropdown.Option("Website"),
+                        ft.dropdown.Option("Teams"),
+                        ft.dropdown.Option("Outlook"),
+                        ft.dropdown.Option("MongoDB Compass"),
+                        ft.dropdown.Option("GitHub Desktop"),
+                        ft.dropdown.Option("Postman"),
+                        ft.dropdown.Option("Notepad"),
+                    ],
+                    bgcolor=f"{self.colors['card_bg']}80",
+                    border_color=self.colors['border'],
+                    color=self.colors['text_secondary'],
+                    text_size=12,
+                    on_change=lambda e: self.update_item_type(item, e.control.value, index)
+                ),
+
+                # Path field
+                ft.TextField(
+                    value=item.get("path", ""),
+                    hint_text="Path/URL (optional)",
+                    color=self.colors['text_secondary'],
+                    bgcolor=f"{self.colors['bg_primary']}60",
+                    border_color=self.colors['border'],
+                    border_radius=8,
+                    text_size=11,
+                    on_change=lambda e: self.update_item_path(item, e.control.value)
+                ),
+
+                # Action buttons
+                ft.Row([
+                    ft.Container(
+                        content=ft.Icon(ft.Icons.PLAY_ARROW, color="#ffffff", size=16),
+                        width=36, height=36,
+                        bgcolor=self.colors['accent_green'],
+                        border_radius=8,
+                        on_click=lambda e: self.launch_single_item(item),
+                        alignment=ft.alignment.center
+                    ),
+                    ft.Container(
+                        content=ft.Icon(ft.Icons.DELETE_OUTLINE, color="#ffffff", size=16),
+                        width=36, height=36,
+                        bgcolor=self.colors['accent_pink'],
+                        border_radius=8,
+                        on_click=lambda e: self.delete_item(index),
+                        alignment=ft.alignment.center
+                    )
+                ], alignment=ft.MainAxisAlignment.SPACE_AROUND)
+            ], spacing=12),
+            
+            bgcolor=self.colors['card_bg'],
+            border_radius=16,
+            padding=20,
+            border=ft.border.all(1, f"{card_color}30"),
+            shadow=ft.BoxShadow(
+                spread_radius=0,
+                blur_radius=20,
+                color="#00000040",
+                offset=ft.Offset(0, 8)
+            ),
+            animate=ft.Animation(300, ft.AnimationCurve.EASE_OUT),
+            opacity=1.0 if is_enabled else 0.6
         )
 
-    def icon_hover_effect(self, e, color):
-        """Icon button hover effect"""
-        if e.data == "true":
-            e.control.bgcolor = f"{color}25"
-            e.control.scale = 1.1
-        else:
-            e.control.bgcolor = f"{color}15"
-            e.control.scale = 1.0
-        e.control.update()
-
     def show_main_page(self):
-        """Show optimized main page layout"""
+        """Show the stunning main page"""
         self.page.controls.clear()
         
-        # Main layout with modern design
-        main_content = ft.Column([
-            self.create_header(),
-            self.create_action_bar(),
-            self.create_startup_panel(),
+        # Main layout with sidebar
+        main_layout = ft.Row([
+            self.create_sidebar(),
             
-            # Items container with smooth scrolling
+            # Main content area
             ft.Container(
                 content=ft.Column([
-                    ft.Text("Launch Items", 
-                           size=16, 
-                           weight=ft.FontWeight.BOLD, 
-                           color=self.Colors['text_primary']),
+                    self.create_header(),
+                    
+                    # Apps grid
                     ft.Container(
-                        content=ft.Column([self.items_column], 
-                                        scroll=ft.ScrollMode.AUTO,
-                                        spacing=8),
-                        bgcolor=self.Colors['surface'],
-                        border_radius=12,
-                        border=ft.border.all(1, self.Colors['outline']),
-                        padding=16,
-                        height=350,  # Fixed height for better performance
+                        content=ft.Column([
+                            ft.Container(
+                                content=self.items_grid,
+                                expand=True,
+                                padding=32
+                            )
+                        ], expand=True),
+                        expand=True,
+                        bgcolor=self.colors['bg_secondary']
                     )
-                ], spacing=12),
-                padding=ft.padding.symmetric(horizontal=20),
+                ], spacing=0, expand=True),
                 expand=True
-            ),
-            
-            # Status bar
-            ft.Container(
-                content=ft.Row([
-                    ft.Icon(ft.Icons.CIRCLE, color=self.Colors['success'], size=8),
-                    self.status_text,
-                    ft.Text(f"• {len(self.config.get('launch_items', []))} items configured", 
-                           color=self.Colors['text_secondary'], size=11)
-                ], spacing=8),
-                padding=ft.padding.symmetric(horizontal=20, vertical=12),
-                bgcolor=self.Colors['surface'],
-                border=ft.border.only(top=ft.BorderSide(1, self.Colors['outline']))
             )
         ], spacing=0, expand=True)
 
-        self.page.add(main_content)
-        
+        self.page.add(main_layout)
         self.refresh_ui()
         self.page.update()
 
-    def create_app_card(self, item, index):
-        """Create beautiful app card with modern design"""
-        app_icon = AppIcons.get_icon(item.get("type", "VS Code"))
-        
-        # Determine status color
-        status_color = self.Colors['success'] if item.get("enabled", True) else self.Colors['text_secondary']
-        
-        return ft.Container(
-            content=ft.Row([
-                # App icon and info
-                ft.Row([
-                    ft.Container(
-                        content=ft.Text(app_icon, size=20),
-                        bgcolor=f"{self.Colors['primary']}20",
-                        border_radius=8,
-                        padding=8,
-                        width=40,
-                        height=40,
-                        alignment=ft.alignment.center
-                    ),
-                    ft.Column([
-                        ft.TextField(
-                            value=item.get("name", ""),
-                            hint_text="App name",
-                            dense=True,
-                            bgcolor=ft.Colors.TRANSPARENT,
-                            border_color=ft.Colors.TRANSPARENT,
-                            focused_border_color=self.Colors['primary'],
-                            color=self.Colors['text_primary'],
-                            text_size=14,
-                            width=150,
-                            on_change=lambda e: self.update_item_name(item, e.control.value)
-                        ),
-                        ft.Dropdown(
-                            value=item.get("type", "VS Code"),
-                            options=[
-                                ft.dropdown.Option("VS Code"),
-                                ft.dropdown.Option("File Explorer"),
-                                ft.dropdown.Option("Command Prompt"),
-                                ft.dropdown.Option("PowerShell"),
-                                ft.dropdown.Option("Website"),
-                                ft.dropdown.Option("Teams"),
-                                ft.dropdown.Option("Outlook"),
-                                ft.dropdown.Option("MongoDB Compass"),
-                                ft.dropdown.Option("GitHub Desktop"),
-                                ft.dropdown.Option("Postman"),
-                                ft.dropdown.Option("Notepad"),
-                            ],
-                            dense=True,
-                            bgcolor=ft.Colors.TRANSPARENT,
-                            border_color=ft.Colors.TRANSPARENT,
-                            text_size=12,
-                            width=120,
-                            on_change=lambda e: self.update_item_type(item, e.control.value, index)
-                        )
-                    ], spacing=4)
-                ], spacing=12),
-                
-                # Path field
-                ft.Container(
-                    content=ft.TextField(
-                        value=item.get("path", ""),
-                        hint_text="Path/URL (optional)",
-                        dense=True,
-                        bgcolor=f"{self.Colors['surface_variant']}50",
-                        border_radius=6,
-                        border_color=self.Colors['outline'],
-                        focused_border_color=self.Colors['primary'],
-                        color=self.Colors['text_primary'],
-                        text_size=12,
-                        on_change=lambda e: self.update_item_path(item, e.control.value)
-                    ),
-                    expand=True
-                ),
-                
-                # Controls
-                ft.Row([
-                    ft.Switch(
-                        value=item.get("enabled", True),
-                        scale=0.8,
-                        active_color=self.Colors['success'],
-                        on_change=lambda e: self.update_item_enabled(item, e.control.value)
-                    ),
-                    self.create_icon_button(
-                        ft.Icons.PLAY_ARROW, 
-                        "Launch", 
-                        lambda e: self.launch_single_item(item),
-                        self.Colors['success']
-                    ),
-                    self.create_icon_button(
-                        ft.Icons.DELETE_OUTLINE, 
-                        "Delete", 
-                        lambda e: self.delete_item(index),
-                        self.Colors['danger']
-                    )
-                ], spacing=8)
-            ], spacing=16),
-            bgcolor=self.Colors['surface_variant'],
-            border_radius=12,
-            border=ft.border.all(1, self.Colors['outline']),
-            padding=16,
-            margin=ft.margin.only(bottom=8),
-            animate=ft.Animation(200, ft.AnimationCurve.EASE_OUT),
-            shadow=ft.BoxShadow(
-                spread_radius=0,
-                blur_radius=4,
-                color="#00000015",
-                offset=ft.Offset(0, 2)
-            )
-        )
-
     def refresh_ui(self):
-        """Optimized UI refresh"""
-        self.items_column.controls.clear()
+        """Refresh the apps grid"""
+        self.items_grid.controls.clear()
         launch_items = self.config.get("launch_items", [])
         
-        # Batch update for better performance
         for i, item in enumerate(launch_items):
             card = self.create_app_card(item, i)
-            self.items_column.controls.append(card)
+            self.items_grid.controls.append(card)
         
-        # Single update call
         self.page.update()
 
     def filter_items(self, e):
-        """Real-time search filtering"""
+        """Filter apps in real-time"""
         search_term = e.control.value.lower()
-        self.items_column.controls.clear()
+        self.items_grid.controls.clear()
         
         launch_items = self.config.get("launch_items", [])
-        filtered_items = []
         
         for i, item in enumerate(launch_items):
             name = item.get("name", "").lower()
             item_type = item.get("type", "").lower()
             
             if search_term in name or search_term in item_type:
-                filtered_items.append((item, i))
-        
-        for item, index in filtered_items:
-            card = self.create_app_card(item, index)
-            self.items_column.controls.append(card)
+                card = self.create_app_card(item, i)
+                self.items_grid.controls.append(card)
         
         self.page.update()
 
-    def launch_single_item(self, item):
-        """Launch single item with feedback"""
-        if self.app_launcher.launch_item(item):
-            self.update_status(f"✅ Launched {item.get('name', 'Unknown')}", self.Colors['success'])
-        else:
-            self.update_status(f"❌ Failed to launch {item.get('name', 'Unknown')}", self.Colors['danger'])
+    def update_status(self, message, color=None):
+        """Update status with color"""
+        if color is None:
+            color = self.colors['accent_green']
+        self.status_text.value = message
+        self.status_text.color = color
+        self.status_text.update()
 
-    # Keep all your existing methods but add these performance improvements:
-    
+    # All your existing methods remain the same:
     def update_item_type(self, item, new_type, index):
-        """Optimized item type update"""
         item["type"] = new_type
         self.config_manager.save_config(self.config)
-        # Only update the specific card instead of full refresh
-        asyncio.create_task(self.refresh_ui_async())
+        self.refresh_ui()
 
     def update_item_name(self, item, new_name):
-        """Debounced name update"""
         item["name"] = new_name
-        asyncio.create_task(self.save_config_debounced())
+        self.config_manager.save_config(self.config)
 
     def update_item_path(self, item, new_path):
-        """Debounced path update"""
         item["path"] = new_path
-        asyncio.create_task(self.save_config_debounced())
+        self.config_manager.save_config(self.config)
 
     def update_item_enabled(self, item, enabled):
-        """Instant enabled toggle"""
         item["enabled"] = enabled
         self.config_manager.save_config(self.config)
-
-    async def save_config_debounced(self):
-        """Debounced config save to prevent excessive I/O"""
-        await asyncio.sleep(0.5)  # Wait for user to stop typing
-        self.config_manager.save_config(self.config)
+        self.refresh_ui()
 
     def delete_item(self, index):
-        """Smooth item deletion"""
         launch_items = self.config.get("launch_items", [])
         if 0 <= index < len(launch_items):
             item_name = launch_items[index].get("name", "Unknown")
             del launch_items[index]
             self.config_manager.save_config(self.config)
             self.refresh_ui()
-            self.update_status(f"🗑️ Deleted {item_name}", self.Colors['warning'])
+            self.update_status(f"🗑️ Deleted {item_name}", self.colors['accent_pink'])
 
     def add_new_item(self, e):
-        """Add item with smooth animation"""
         new_item = {
             "type": "VS Code",
-            "name": f"New Item {len(self.config.get('launch_items', [])) + 1}",
+            "name": f"New App {len(self.config.get('launch_items', [])) + 1}",
             "path": "",
             "browser": "chrome",
             "enabled": True
@@ -506,68 +478,43 @@ class UIManager:
         self.config["launch_items"].append(new_item)
         self.config_manager.save_config(self.config)
         self.refresh_ui()
-        self.update_status("➕ Added new item", self.Colors['success'])
+        self.update_status("➕ Added new app!", self.colors['accent_blue'])
 
     def launch_selected(self, e):
-        """Enhanced launch with progress feedback"""
         launch_items = self.config.get("launch_items", [])
         enabled_items = [item for item in launch_items if item.get("enabled", True)]
         
         if not enabled_items:
-            self.update_status("⚠️ No items selected for launch", self.Colors['warning'])
+            self.update_status("⚠️ No apps selected for launch", self.colors['accent_orange'])
             return
-        
+
         launched_count = 0
         for item in enabled_items:
             if self.app_launcher.launch_item(item):
                 launched_count += 1
-        
-        self.update_status(f"🚀 Launched {launched_count}/{len(enabled_items)} items", 
-                          self.Colors['success'] if launched_count > 0 else self.Colors['danger'])
 
-    def close_all(self, e):
-        """Enhanced close all with confirmation"""
-        closed_count = self.app_launcher.close_all_windows()
-        self.update_status(f"❌ Closed {closed_count} processes", self.Colors['warning'])
+        self.update_status(f"🚀 Launched {launched_count} apps successfully!", self.colors['accent_green'])
+
+    def launch_single_item(self, item):
+        if self.app_launcher.launch_item(item):
+            self.update_status(f"✅ Launched {item.get('name', 'Unknown')}", self.colors['accent_green'])
+        else:
+            self.update_status(f"❌ Failed to launch {item.get('name', 'Unknown')}", self.colors['accent_pink'])
 
     def toggle_startup(self, e):
-        """Enhanced startup toggle"""
         enable_startup = e.control.value
         
         if enable_startup:
             if self.startup_manager.add_to_startup():
-                self.update_status("✅ Added to Windows startup", self.Colors['success'])
+                self.update_status("✅ Added to Windows startup", self.colors['accent_green'])
             else:
-                self.update_status("❌ Failed to add to startup", self.Colors['danger'])
+                self.update_status("❌ Failed to add to startup", self.colors['accent_pink'])
                 e.control.value = False
         else:
             if self.startup_manager.remove_from_startup():
-                self.update_status("🚫 Removed from Windows startup", self.Colors['warning'])
+                self.update_status("🚫 Removed from Windows startup", self.colors['accent_orange'])
             else:
-                self.update_status("❌ Failed to remove from startup", self.Colors['danger'])
+                self.update_status("❌ Failed to remove from startup", self.colors['accent_pink'])
                 e.control.value = True
         
         e.control.update()
-
-    def toggle_select_all(self, e):
-        """Enhanced select all toggle"""
-        launch_items = self.config.get("launch_items", [])
-        if not launch_items:
-            self.update_status("⚠️ No items to select", self.Colors['warning'])
-            return
-
-        all_enabled = all(item.get("enabled", True) for item in launch_items)
-        new_state = not all_enabled
-
-        for item in launch_items:
-            item["enabled"] = new_state
-
-        self.config_manager.save_config(self.config)
-        self.refresh_ui()
-        
-        action = "Selected" if new_state else "Deselected"
-        self.update_status(f"☑️ {action} all {len(launch_items)} items", self.Colors['primary'])
-
-    def show_settings(self, e):
-        """Placeholder for settings dialog"""
-        self.update_status("⚙️ Settings panel coming soon!", self.Colors['primary'])
