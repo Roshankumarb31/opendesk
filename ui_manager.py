@@ -9,24 +9,24 @@ class UIManager:
         self.startup_manager = startup_manager
         self.config = config
 
-        # UI state
         self.items_column = ft.Column(spacing=8)
-        self.status_text = ft.Text("Ready!", color="#94A3B8", size=12, weight=ft.FontWeight.W_500)
-        # Color palette for elegance
+        self.status_text = ft.Text("Ready!", color="#B4BACC", size=12, weight=ft.FontWeight.W_500)
+
+        # Dark theme palette
         self.Colors = {
-            'bg': '#F9FAFB',
-            'surface': '#FFFFFF',
-            'primary': '#5B9DF9',
-            'accent': '#F5D047',
-            'danger': '#FF647A',
-            'gray': '#F1F5F9',
-            'shadow': '#E0E7EF',
-            'text': '#2A3540',
-            'subtext': '#7B93AE'
+            'bg': '#16171C',        # page background
+            'surface': '#21222A',   # cards/rows
+            'primary': '#4B8CFF',   # accents and icons
+            'accent': '#FFD952',    # important switches
+            'danger': '#FF4B7A',    # error/delete
+            'gray': '#23242B',      # inputs backgrounds
+            'shadow': '#14151A',    # subtle shadow
+            'text': '#ECECF1',      # main text
+            'subtext': '#8E93A8'    # secondary text
         }
 
     def setup_ui(self):
-        self.page.title = "OpenDesk Simple Launcher"
+        self.page.title = "OpenDesk Simple Launcher (Dark)"
         self.page.window_width = 1000
         self.page.window_height = 700
         self.page.bgcolor = self.Colors['bg']
@@ -91,6 +91,55 @@ class UIManager:
             bgcolor=self.Colors['gray'],
             border_radius=12
         )
+    
+
+
+
+
+    def create_action_bar(self):
+        return ft.Container(
+            content=ft.Row([
+                ft.ElevatedButton(
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.ROCKET_LAUNCH, color="#000000", size=16),
+                        ft.Text("Launch All", color="#000000", size=13, weight=ft.FontWeight.W_500)
+                    ], spacing=6, tight=True),
+                    bgcolor=self.Colors['primary'],
+                    color="#000",
+                    on_click=self.launch_selected,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=8),
+                    )
+                ),
+                ft.ElevatedButton(
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.CHECK_BOX, color="#ffffff", size=16),
+                        ft.Text("Select All", color="#ffffff", size=13, weight=ft.FontWeight.W_500)
+                    ], spacing=6, tight=True),
+                    bgcolor='#464757',
+                    color="#FFF",
+                    on_click=self.toggle_select_all,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=8),
+                    )
+                ),
+                ft.ElevatedButton(
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.DELETE_SWEEP, color="#000000", size=16),
+                        ft.Text("Delete All", color="#000000", size=13, weight=ft.FontWeight.W_500)
+                    ], spacing=6, tight=True),
+                    bgcolor=self.Colors['danger'],
+                    color="#FFF",
+                    on_click=self.delete_all,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=8),
+                    )
+                ),
+            ], spacing=12),
+            padding=ft.padding.only(left=8, bottom=8)
+        )
+
+
 
     def create_app_row(self, item, index):
         app_icon = AppIcons.get_icon(item.get("type", "VS Code"))
@@ -174,10 +223,17 @@ class UIManager:
         main_content = ft.Column([
             self.create_header(),
             self.create_startup_panel(),
+            self.create_action_bar(),
             ft.Container(
                 content=ft.Row([
                     ft.Text("Applications", size=15, weight=ft.FontWeight.BOLD, color=self.Colors['text']),
-                    ft.TextButton("Add New", on_click=self.add_new_item)
+                    ft.Container(
+                        content=ft.Text("+ Add New", color="#000000", size=13, weight=ft.FontWeight.W_500),
+                        bgcolor=self.Colors['primary'],
+                        border_radius=8,
+                        padding=ft.padding.symmetric(horizontal=16, vertical=8),
+                        on_click=self.add_new_item
+                    )
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 padding=ft.padding.symmetric(horizontal=8, vertical=8)
             ),
@@ -263,6 +319,28 @@ class UIManager:
             if self.app_launcher.launch_item(item):
                 launched += 1
         self.update_status(f"Launched {launched} apps.", self.Colors['primary'])
+
+    def toggle_select_all(self, e):
+        launch_items = self.config.get("launch_items", [])
+        if not launch_items:
+            return
+        all_enabled = all(item.get("enabled", True) for item in launch_items)
+        for item in launch_items:
+            item["enabled"] = not all_enabled
+        self.config_manager.save_config(self.config)
+        self.refresh_ui()
+        if all_enabled:
+            self.update_status("All apps deselected.", self.Colors['subtext'])
+        else:
+            self.update_status("All apps selected.", self.Colors['primary'])
+
+    def delete_all(self, e):
+        if "launch_items" in self.config:
+            count = len(self.config["launch_items"])
+            self.config["launch_items"].clear()
+            self.config_manager.save_config(self.config)
+            self.refresh_ui()
+            self.update_status(f"Deleted all {count} apps.", self.Colors['danger'])
 
     def close_all(self, e):
         count = self.app_launcher.close_all_windows()
