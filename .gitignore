@@ -31,3 +31,7 @@ flet_outputs/
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+
+app1.py
+app1_main.py
