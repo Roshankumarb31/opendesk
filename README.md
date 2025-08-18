@@ -101,7 +101,6 @@ OpenDesk/
 ## ⚠️ Important
 
 - **Windows Only:** Built exclusively for Windows desktop.
-- **Run As Admin:** Needed for some Windows startup integrations.
 - **Safe Closing:** Only developer/launcher apps are closed, not system processes.
 - **App Paths:** Common install paths auto-detected; custom installs may require tweaks.
 
