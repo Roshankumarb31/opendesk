@@ -76,32 +76,46 @@ class AppLauncher:
             subprocess.Popen("start powershell", shell=True)
         return True
     
+
+    
     def _launch_website(self, item):
-        """Launch website in specified browser"""
+        """Launch website in specified browser with incognito option"""
         url = item.get("path", "").strip()
         browser = item.get("browser", "chrome")
+        incognito = item.get("incognito", False)
         
         if not url:
             return False
-            
+
         # Add protocol if missing
         if not url.startswith(('http://', 'https://')):
             url = 'https://' + url
-        
+
         try:
-            browser_commands = {
-                "chrome": ["start", "chrome", url],
-                "edge": ["start", "msedge", url],
-                "brave": ["start", "brave", url],
-                "firefox": ["start", "firefox", url]
-            }
-            
+            # Browser commands with incognito support
+            if incognito:
+                browser_commands = {
+                    "chrome": ["start", "chrome", "--incognito", url],
+                    "edge": ["start", "msedge", "--inprivate", url],
+                    "brave": ["start", "brave", "--incognito", url],
+                    "firefox": ["start", "firefox", "--private-window", url]
+                }
+            else:
+                browser_commands = {
+                    "chrome": ["start", "chrome", url],
+                    "edge": ["start", "msedge", url],
+                    "brave": ["start", "brave", url],
+                    "firefox": ["start", "firefox", url]
+                }
+
             cmd = browser_commands.get(browser, ["start", url])
             subprocess.Popen(cmd, shell=True)
             return True
         except Exception:
+            # Fallback to default browser
             subprocess.Popen(["start", url], shell=True)
             return True
+
     
     def _launch_teams(self):
         """Launch Microsoft Teams"""

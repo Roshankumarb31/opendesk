@@ -155,6 +155,17 @@ class UIManager:
         )
     
 
+    def update_item_browser(self, item, browser):
+        item["browser"] = browser
+        self.config_manager.save_config(self.config)
+        self.update_status(f"Browser set to {browser.title()}", self.Colors['primary'])
+
+    def update_item_incognito(self, item, incognito):
+        item["incognito"] = incognito
+        self.config_manager.save_config(self.config)
+        mode = "incognito" if incognito else "normal"
+        self.update_status(f"Mode set to {mode}", self.Colors['accent'])
+
 
 
 
@@ -216,6 +227,8 @@ class UIManager:
         )
 
 
+
+
     def create_app_row(self, item, index):
         app_icon = AppIcons.get_icon(item.get("type", "VS Code"))
         enabled = item.get("enabled", True)
@@ -224,6 +237,9 @@ class UIManager:
         needs_folder_browse = item.get("type", "") in [
             "VS Code", "File Explorer", "Command Prompt", "PowerShell"
         ]
+        
+        # Check if this is a website
+        is_website = item.get("type", "") == "Website"
         
         return ft.Container(
             content=ft.Row([
@@ -253,26 +269,27 @@ class UIManager:
                     ) for t in ["VS Code", "File Explorer", "Command Prompt", "PowerShell",
                             "Website", "Teams", "Outlook", "MongoDB Compass",
                             "GitHub Desktop", "Postman", "Notepad"]],
-                    width=120,
+                    width=150,
                     bgcolor=self.Colors['gray'],
                     border_color="transparent",
                     color=self.Colors['dropdown_text'],
                     text_style=ft.TextStyle(color=self.Colors['dropdown_text']),
                     on_change=lambda e: self.update_item_type(item, e.control.value, index)
                 ),
-                # Path field with browse button
+                
+                # URL/Path field
                 ft.Row([
                     ft.TextField(
                         value=item.get("path", ""),
-                        hint_text="Path/URL",
-                        width=140 if needs_folder_browse else 180,
+                        hint_text="URL" if is_website else "Path/URL",
+                        width=120 if is_website else (140 if needs_folder_browse else 180),
                         bgcolor=self.Colors['gray'],
                         border_color="transparent",
                         color=self.Colors['text'],
                         text_size=13,
                         on_change=lambda e: self.update_item_path(item, e.control.value)
                     ),
-                    # Add browse button for specific types
+                    # Browse button for file types
                     ft.IconButton(
                         icon=ft.Icons.FOLDER_OPEN,
                         tooltip="Browse Folder",
@@ -281,6 +298,39 @@ class UIManager:
                         on_click=lambda e: self.browse_folder(item)
                     ) if needs_folder_browse else ft.Container(width=0)
                 ], spacing=5),
+                
+                # Browser dropdown for websites
+                ft.Dropdown(
+                    value=item.get("browser", "chrome"),
+                    options=[ft.dropdown.Option(
+                        key=b,
+                        text=b.title(),
+                        text_style=ft.TextStyle(color="#A59E9E")
+                    ) for b in ["chrome", "edge", "brave", "firefox"]],
+                    width=130,
+                    bgcolor=self.Colors['gray'],
+                    border_color="transparent",
+                    color=self.Colors['dropdown_text'],
+                    text_style=ft.TextStyle(color=self.Colors['dropdown_text']),
+                    visible=is_website,
+                    on_change=lambda e: self.update_item_browser(item, e.control.value)
+                ) if is_website else ft.Container(width=80),
+                
+                # Incognito toggle for websites
+                ft.Container(
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.VISIBILITY_OFF, size=16, color=self.Colors['subtext']),
+                        ft.Switch(
+                            value=item.get("incognito", False),
+                            scale=0.6,
+                            active_color=self.Colors['accent'],
+                            on_change=lambda e: self.update_item_incognito(item, e.control.value)
+                        )
+                    ], spacing=2),
+                    visible=is_website,
+                    tooltip="Incognito Mode"
+                ) if is_website else ft.Container(width=60),
+                
                 ft.Switch(
                     value=enabled,
                     scale=0.8,
@@ -301,7 +351,7 @@ class UIManager:
                     bgcolor=self.Colors['surface'],
                     on_click=lambda e: self.delete_item(index)
                 )
-            ], spacing=12),
+            ], spacing=8),  # Reduced spacing to fit more controls
             padding=10,
             bgcolor=self.Colors['surface'] if enabled else self.Colors['gray'],
             border_radius=9,
@@ -313,6 +363,9 @@ class UIManager:
             ),
             margin=ft.margin.only(bottom=5)
         )
+
+
+
 
 
 
@@ -429,6 +482,7 @@ class UIManager:
             "name": f"New App {len(self.config.get('launch_items', [])) + 1}",
             "path": "",
             "browser": "chrome",
+            "incognito": False,
             "enabled": True
         }
         self.config.setdefault("launch_items", []).append(new_item)
