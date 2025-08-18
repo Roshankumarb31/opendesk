@@ -1,5 +1,6 @@
 import flet as ft
 from utils import AppIcons
+from confirmation_dialogs import ConfirmationPage
 
 class UIManager:
     def __init__(self, page, config_manager, app_launcher, startup_manager, config):
@@ -11,6 +12,7 @@ class UIManager:
 
         self.items_column = ft.Column(spacing=8)
         self.status_text = ft.Text("Ready!", color="#B4BACC", size=12, weight=ft.FontWeight.W_500)
+        self.confirmation_page = ConfirmationPage(page, self)
 
         # Dark theme palette
         self.Colors = {
@@ -130,11 +132,25 @@ class UIManager:
                     ], spacing=6, tight=True),
                     bgcolor=self.Colors['danger'],
                     color="#FFF",
-                    on_click=self.delete_all,
+                    on_click=self.show_delete_all_confirmation,
                     style=ft.ButtonStyle(
                         shape=ft.RoundedRectangleBorder(radius=8),
                     )
                 ),
+                ft.ElevatedButton(
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.CLOSE, color="#000000", size=16),
+                        ft.Text("Close All", color="#000000", size=13, weight=ft.FontWeight.W_500)
+                    ], spacing=6, tight=True),
+                    bgcolor=self.Colors['accent'],
+                    color="#FFF",
+                    on_click=self.show_close_all_confirmation,
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=8),
+                    )
+                )
+
+
             ], spacing=12),
             padding=ft.padding.only(left=8, bottom=8)
         )
@@ -340,11 +356,37 @@ class UIManager:
             self.config["launch_items"].clear()
             self.config_manager.save_config(self.config)
             self.refresh_ui()
-            self.update_status(f"Deleted all {count} apps.", self.Colors['danger'])
 
     def close_all(self, e):
         count = self.app_launcher.close_all_windows()
-        self.update_status(f"Closed {count} processes.", self.Colors['accent'])
+
+    def show_confirmation_dialog(self, title, content_text, confirm_text, confirm_action):
+        dlg = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(title),
+            content=ft.Text(content_text),
+            actions=[
+                ft.TextButton("Cancel", on_click=lambda e: dlg.dismiss()),
+                ft.TextButton(confirm_text, on_click=lambda e: [dlg.dismiss(), confirm_action()])
+            ]
+        )
+        self.page.dialog = dlg
+        dlg.open = True
+        self.page.update()
+
+    def show_delete_all_confirmation(self, e=None):
+        self.confirmation_page.show_delete_confirmation()
+
+
+    def delete_all_actual(self):
+        self.delete_all(None)  # Or pass appropriate event
+
+    def show_close_all_confirmation(self, e=None):
+        self.confirmation_page.show_close_confirmation()
+
+    def close_all_actual(self):
+        self.close_all(None)
+
 
     def launch_single_item(self, item):
         if self.app_launcher.launch_item(item):
