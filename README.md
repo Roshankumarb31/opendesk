@@ -1,4 +1,5 @@
 ![OpenDesk Logo](assets/repo_logo.png) 🚀 OpenDesk: The Ultimate Developer Launcher
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A slick, ultra-fast desktop launcher for developers—built with Python and Flet. Launch your favorite tools, terminals, and websites with a single click, all in a modern dark UI.
 
