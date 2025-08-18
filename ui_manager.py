@@ -24,7 +24,8 @@ class UIManager:
             'gray': '#23242B',      # inputs backgrounds
             'shadow': '#14151A',    # subtle shadow
             'text': '#ECECF1',      # main text
-            'subtext': '#8E93A8'    # secondary text
+            'subtext': "#FFFFFF",    # secondary text
+            'dropdown_text': '#FFFFFF'
         }
 
     def setup_ui(self):
@@ -32,6 +33,8 @@ class UIManager:
         self.page.window_width = 1000
         self.page.window_height = 700
         self.page.bgcolor = self.Colors['bg']
+        self.page.theme_mode = ft.ThemeMode.DARK
+        self.page.theme = ft.Theme(color_scheme_seed=ft.Colors.BLUE)
         self.show_main_page()
 
     def create_header(self):
@@ -181,16 +184,22 @@ class UIManager:
                 ),
                 ft.Dropdown(
                     value=item.get("type", "VS Code"),
-                    options=[ft.dropdown.Option(t) for t in [
-                        "VS Code", "File Explorer", "Command Prompt", "PowerShell",
-                        "Website", "Teams", "Outlook", "MongoDB Compass",
-                        "GitHub Desktop", "Postman", "Notepad"]],
+                    options=[ft.dropdown.Option(
+                        key=t, 
+                        text=t, 
+                        text_style=ft.TextStyle(color="#A59E9E")  # Force white text
+                    ) for t in ["VS Code", "File Explorer", "Command Prompt", "PowerShell",
+                            "Website", "Teams", "Outlook", "MongoDB Compass",
+                            "GitHub Desktop", "Postman", "Notepad"]],
                     width=120,
                     bgcolor=self.Colors['gray'],
                     border_color="transparent",
-                    color=self.Colors['subtext'],
+                    color=self.Colors['dropdown_text'],  # Force white for selected text
+                    text_style=ft.TextStyle(color=self.Colors['dropdown_text']),
                     on_change=lambda e: self.update_item_type(item, e.control.value, index)
                 ),
+
+
                 ft.TextField(
                     value=item.get("path", ""),
                     hint_text="Path/URL",
@@ -359,6 +368,7 @@ class UIManager:
 
     def close_all(self, e):
         count = self.app_launcher.close_all_windows()
+
 
     def show_confirmation_dialog(self, title, content_text, confirm_text, confirm_action):
         dlg = ft.AlertDialog(
