@@ -281,7 +281,7 @@ class UIManager:
                 ft.Row([
                     ft.TextField(
                         value=item.get("path", ""),
-                        hint_text="URL" if is_website else "Path/URL",
+                        hint_text="URL (Optional)" if is_website else "Path/URL",
                         width=120 if is_website else (140 if needs_folder_browse else 180),
                         bgcolor=self.Colors['gray'],
                         border_color="transparent",
