@@ -79,42 +79,45 @@ class AppLauncher:
 
     
     def _launch_website(self, item):
-        """Launch website in specified browser with incognito option"""
+        """Launch website in specified browser with incognito option or just open browser if URL missing"""
         url = item.get("path", "").strip()
         browser = item.get("browser", "chrome")
         incognito = item.get("incognito", False)
-        
-        if not url:
-            return False
 
-        # Add protocol if missing
-        if not url.startswith(('http://', 'https://')):
+        # Add protocol if missing (only when url provided)
+        if url and not url.startswith(('http://', 'https://')):
             url = 'https://' + url
 
         try:
-            # Browser commands with incognito support
+            # Build browser commands (with or without URL)
             if incognito:
                 browser_commands = {
-                    "chrome": ["start", "chrome", "--incognito", url],
-                    "edge": ["start", "msedge", "--inprivate", url],
-                    "brave": ["start", "brave", "--incognito", url],
-                    "firefox": ["start", "firefox", "--private-window", url]
+                    "chrome": ["start", "chrome", "--incognito"] + ([url] if url else []),
+                    "edge": ["start", "msedge", "--inprivate"] + ([url] if url else []),
+                    "brave": ["start", "brave", "--incognito"] + ([url] if url else []),
+                    "firefox": ["start", "firefox", "--private-window"] + ([url] if url else []),
                 }
             else:
                 browser_commands = {
-                    "chrome": ["start", "chrome", url],
-                    "edge": ["start", "msedge", url],
-                    "brave": ["start", "brave", url],
-                    "firefox": ["start", "firefox", url]
+                    "chrome": ["start", "chrome"] + ([url] if url else []),
+                    "edge": ["start", "msedge"] + ([url] if url else []),
+                    "brave": ["start", "brave"] + ([url] if url else []),
+                    "firefox": ["start", "firefox"] + ([url] if url else []),
                 }
 
-            cmd = browser_commands.get(browser, ["start", url])
+            cmd = browser_commands.get(browser, ["start"] + ([url] if url else []))
             subprocess.Popen(cmd, shell=True)
             return True
         except Exception:
-            # Fallback to default browser
-            subprocess.Popen(["start", url], shell=True)
+            # Fallback to default handler: open URL if present, else open default browser/home
+            if url:
+                subprocess.Popen(["start", url], shell=True)
+            else:
+                # Try starting a generic browser protocol — this typically opens default browser
+                subprocess.Popen(["start", ""], shell=True)
             return True
+
+
 
     
     def _launch_teams(self):
