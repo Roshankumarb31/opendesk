@@ -150,8 +150,27 @@ class UIManager:
 
 
 
+
+    def create_app_row(self, item, index):
+        app_icon = AppIcons.get_icon(item.get("type", "VS Code"))
+        enabled = item.get("enabled", True)
+        
+        # Check if this type needs folder browsing
+        needs_folder_browse = item.get("type", "") in [
+            "VS Code", "File Explorer", "Command Prompt", "PowerShell"
+        ]
+        
+        # Check if this is a website
+        is_website = item.get("type", "") == "Website"
+        icon_widget = (
+            ft.Image(src=app_icon, width=24, height=24)
+            if isinstance(app_icon, str) and app_icon.endswith(".png")
+            else ft.Text(app_icon, size=18)
+        )
+
     def _create_row_content(self, item, index, app_icon, enabled, needs_folder_browse, is_website):
         """Create the visual content for each row"""
+
         return ft.Container(
             content=ft.Row([
                 # Add drag handle
@@ -163,7 +182,7 @@ class UIManager:
                 
                 # App icon
                 ft.Container(
-                    content=ft.Text(app_icon, size=18),
+                    content=icon_widget,
                     width=34, height=34,
                     bgcolor=self.Colors['gray'],
                     border_radius=7,
@@ -404,11 +423,6 @@ class UIManager:
 
 
 
-
-
-
-
-
     def browse_folder(self, item):
         self.current_item = item
         item_type = item.get("type", "")
@@ -529,6 +543,7 @@ class UIManager:
             self.refresh_ui()
             self.update_status("Deleted app.", self.Colors['danger'])
 
+
     def add_new_item(self, e):
         # Get existing app names to find the next available number
         launch_items = self.config.get("launch_items", [])
@@ -562,10 +577,12 @@ class UIManager:
         }
         
         self.config.setdefault("launch_items", []).append(new_item)
+
         self.config_manager.save_config(self.config)
         
         self.refresh_ui()
         self.update_status(f"Added New App {next_number}!", self.Colors['primary'])
+
 
 
 
