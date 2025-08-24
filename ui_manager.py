@@ -121,20 +121,28 @@ class UIManager:
         def on_reorder(e):
             if e.old_index == e.new_index:
                 return
-            
-            # Update both the controls list AND the config data
-            controls.insert(e.new_index, controls.pop(e.old_index))
+
+            # ONLY reorder the data - don't touch controls list here
             launch_items.insert(e.new_index, launch_items.pop(e.old_index))
             
+            # Save config
             self.config_manager.save_config(self.config)
-            self.update_status(f'Moved to position {e.new_index + 1}', self.Colors['primary'])
-            self.page.update()
+            
+            # Update status text WITHOUT calling update_status (to avoid UI conflicts)
+            self.status_text.value = f'Moved to position {e.new_index + 1}'
+            self.status_text.color = self.Colors['primary']
+            
+            # Don't call self.page.update() here - ReorderableListView handles its own updates
 
-        return ft.ReorderableListView(
+        # Create and store reference to ReorderableListView
+        self.reorderable_list = ft.ReorderableListView(
             expand=True,
             on_reorder=on_reorder,
-            controls=controls  # ✅ Use 'controls' if 'children' doesn't work
+            controls=controls
         )
+        
+        return self.reorderable_list
+
 
 
 
