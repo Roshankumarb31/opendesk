@@ -94,6 +94,63 @@ class UIManager:
             self.refresh_ui()
             self.update_status(f"Selected: {e.path}", self.Colors['primary'])
 
+
+
+
+    def create_reorderable_list(self):
+        """Create a reorderable list using Flet's built-in ReorderableListView"""
+        launch_items = self.config.get('launch_items', [])
+
+        # Create list of controls
+        controls = []
+        for idx, item in enumerate(launch_items):
+            app_icon = AppIcons.get_icon(item.get('type', 'VS Code'))
+            enabled = item.get('enabled', True)
+            needs_folder_browse = item.get('type', '') in ['VS Code', 'File Explorer', 'Command Prompt', 'PowerShell']
+            is_website = item.get('type', '') == 'Website'
+            
+            controls.append(
+                ft.Container(
+                    key=str(idx),  # Important: unique key for reorder tracking
+                    content=self._create_row_content(
+                        item, idx, app_icon, enabled, needs_folder_browse, is_website
+                    )
+                )
+            )
+
+        def on_reorder(e):
+            if e.old_index == e.new_index:
+                return
+
+            # ONLY reorder the data - don't touch controls list here
+            launch_items.insert(e.new_index, launch_items.pop(e.old_index))
+            
+            # Save config
+            self.config_manager.save_config(self.config)
+            
+            # Update status text WITHOUT calling update_status (to avoid UI conflicts)
+            self.status_text.value = f'Moved to position {e.new_index + 1}'
+            self.status_text.color = self.Colors['primary']
+            
+            # Don't call self.page.update() here - ReorderableListView handles its own updates
+
+        # Create and store reference to ReorderableListView
+        self.reorderable_list = ft.ReorderableListView(
+            expand=True,
+            on_reorder=on_reorder,
+            controls=controls
+        )
+        
+        return self.reorderable_list
+
+
+
+
+
+
+
+
+
     def create_app_row(self, item, index):
         app_icon = AppIcons.get_icon(item.get("type", "VS Code"))
         enabled = item.get("enabled", True)
@@ -103,37 +160,174 @@ class UIManager:
             "VS Code", "File Explorer", "Command Prompt", "PowerShell"
         ]
         
+        # Check if this is a website
+        is_website = item.get("type", "") == "Website"
+        icon_widget = (
+            ft.Image(src=app_icon, width=24, height=24)
+            if isinstance(app_icon, str) and app_icon.endswith(".png")
+            else ft.Text(app_icon, size=18)
+        )
+
+    def _create_row_content(self, item, index, app_icon, enabled, needs_folder_browse, is_website):
+        """Create the visual content for each row"""
+
         return ft.Container(
             content=ft.Row([
-                # ... your existing controls (icon, name, dropdown) ...
+                # Add drag handle
+                ft.Container(
+                    content=ft.Icon(ft.Icons.DRAG_INDICATOR, size=16, color=self.Colors['subtext']),
+                    width=20,
+                    alignment=ft.alignment.center
+                ),
                 
-                # Path field with browse button
+                # App icon
+                ft.Container(
+                    content=icon_widget,
+                    width=34, height=34,
+                    bgcolor=self.Colors['gray'],
+                    border_radius=7,
+                    alignment=ft.alignment.center
+                ),
+                
+                # Name field
+                ft.TextField(
+                    value=item.get("name", ""),
+                    hint_text="Name",
+                    width=120,
+                    bgcolor="transparent",
+                    border_color="transparent",
+                    color=self.Colors['text'],
+                    text_size=14,
+                    on_change=lambda e: self.update_item_name(item, e.control.value)
+                ),
+                
+                # Type dropdown
+                ft.Dropdown(
+                    value=item.get("type", "VS Code"),
+                    options=[ft.dropdown.Option(
+                        key=t,
+                        text=t,
+                        text_style=ft.TextStyle(color="#A59E9E")
+                    ) for t in ["VS Code", "File Explorer", "Command Prompt", "PowerShell",
+                            "Website", "Teams", "Outlook", "MongoDB Compass",
+                            "GitHub Desktop", "Postman", "Notepad"]],
+                    width=150,
+                    bgcolor=self.Colors['gray'],
+                    border_color="transparent",
+                    color=self.Colors['dropdown_text'],
+                    text_style=ft.TextStyle(color=self.Colors['dropdown_text']),
+                    on_change=lambda e: self.update_item_type(item, e.control.value, index)
+                ),
+                
+                # URL/Path field
                 ft.Row([
                     ft.TextField(
                         value=item.get("path", ""),
-                        hint_text="Path/URL",
-                        width=140 if needs_folder_browse else 180,
+                        hint_text="URL (Optional)" if is_website else "Path/URL",
+                        width=120 if is_website else (140 if needs_folder_browse else 180),
                         bgcolor=self.Colors['gray'],
                         border_color="transparent",
                         color=self.Colors['text'],
                         text_size=13,
                         on_change=lambda e: self.update_item_path(item, e.control.value)
                     ),
-                    # Add browse button for specific types
+                    # Browse button for file types
                     ft.IconButton(
                         icon=ft.Icons.FOLDER_OPEN,
                         tooltip="Browse Folder",
                         icon_color=self.Colors['primary'],
                         bgcolor=self.Colors['surface'],
-                        visible=needs_folder_browse,
                         on_click=lambda e: self.browse_folder(item)
                     ) if needs_folder_browse else ft.Container(width=0)
                 ], spacing=5),
                 
-                # ... rest of your existing controls (switch, play, delete) ...
+                # Browser dropdown for websites
+                ft.Dropdown(
+                    value=item.get("browser", "chrome"),
+                    options=[ft.dropdown.Option(
+                        key=b,
+                        text=b.title(),
+                        text_style=ft.TextStyle(color="#A59E9E")
+                    ) for b in ["chrome", "edge", "brave", "firefox"]],
+                    width=130,
+                    bgcolor=self.Colors['gray'],
+                    border_color="transparent",
+                    color=self.Colors['dropdown_text'],
+                    text_style=ft.TextStyle(color=self.Colors['dropdown_text']),
+                    visible=is_website,
+                    on_change=lambda e: self.update_item_browser(item, e.control.value)
+                ) if is_website else ft.Container(width=80),
                 
-            ], spacing=12),
-            # ... rest of your container properties ...
+                # Incognito toggle for websites
+                ft.Container(
+                    content=ft.Row([
+                        ft.Icon(ft.Icons.VISIBILITY_OFF, size=16, color=self.Colors['subtext']),
+                        ft.Switch(
+                            value=item.get("incognito", False),
+                            scale=0.6,
+                            active_color=self.Colors['accent'],
+                            on_change=lambda e: self.update_item_incognito(item, e.control.value)
+                        )
+                    ], spacing=2),
+                    visible=is_website,
+                    tooltip="Incognito Mode"
+                ) if is_website else ft.Container(width=60),
+                
+                # Enable/disable switch
+                ft.Switch(
+                    value=enabled,
+                    scale=0.8,
+                    active_color=self.Colors['primary'],
+                    on_change=lambda e: self.update_item_enabled(item, e.control.value)
+                ),
+                
+                # Launch button
+                ft.IconButton(
+                    icon=ft.Icons.PLAY_ARROW,
+                    tooltip="Launch",
+                    icon_color=self.Colors['primary'],
+                    bgcolor=self.Colors['surface'],
+                    on_click=lambda e: self.launch_single_item(item)
+                ),
+                
+                # Delete button
+                ft.IconButton(
+                    icon=ft.Icons.DELETE_OUTLINE,
+                    tooltip="Delete",
+                    icon_color=self.Colors['danger'],
+                    bgcolor=self.Colors['surface'],
+                    on_click=lambda e: self.delete_item(index)
+                )
+            ], spacing=8),
+            padding=10,
+            bgcolor=self.Colors['surface'] if enabled else self.Colors['gray'],
+            border_radius=9,
+            shadow=ft.BoxShadow(
+                spread_radius=0,
+                blur_radius=9,
+                color=self.Colors['shadow'],
+                offset=ft.Offset(0, 2)
+            ),
+            margin=ft.margin.only(bottom=5)
+        )
+
+
+    def create_app_row(self, item, index):
+        app_icon = AppIcons.get_icon(item.get("type", "VS Code"))
+        enabled = item.get("enabled", True)
+        needs_folder_browse = item.get("type", "") in ["VS Code", "File Explorer", "Command Prompt", "PowerShell"]
+        is_website = item.get("type", "") == "Website"
+
+        # Create draggable container
+        return ft.Draggable(
+            group="app_items",
+            content=ft.DragTarget(
+                group="app_items",
+                content=self._create_row_content(item, index, app_icon, enabled, needs_folder_browse, is_website),
+                on_will_accept=self._on_will_accept_drop,
+                on_accept=lambda e: self._on_drop(e, index)
+            ),
+            data=str(index)
         )
 
 
@@ -229,150 +423,6 @@ class UIManager:
 
 
 
-    def create_app_row(self, item, index):
-        app_icon = AppIcons.get_icon(item.get("type", "VS Code"))
-        enabled = item.get("enabled", True)
-        
-        # Check if this type needs folder browsing
-        needs_folder_browse = item.get("type", "") in [
-            "VS Code", "File Explorer", "Command Prompt", "PowerShell"
-        ]
-        
-        # Check if this is a website
-        is_website = item.get("type", "") == "Website"
-        icon_widget = (
-            ft.Image(src=app_icon, width=24, height=24)
-            if isinstance(app_icon, str) and app_icon.endswith(".png")
-            else ft.Text(app_icon, size=18)
-        )
-        return ft.Container(
-            content=ft.Row([
-                ft.Container(
-                    content=icon_widget,
-                    width=34, height=34,
-                    bgcolor=self.Colors['gray'],
-                    border_radius=7,
-                    alignment=ft.alignment.center
-                ),
-                ft.TextField(
-                    value=item.get("name", ""),
-                    hint_text="Name",
-                    width=120,
-                    bgcolor="transparent",
-                    border_color="transparent",
-                    color=self.Colors['text'],
-                    text_size=14,
-                    on_change=lambda e: self.update_item_name(item, e.control.value)
-                ),
-                ft.Dropdown(
-                    value=item.get("type", "VS Code"),
-                    options=[ft.dropdown.Option(
-                        key=t,
-                        text=t,
-                        text_style=ft.TextStyle(color="#A59E9E")
-                    ) for t in ["VS Code", "File Explorer", "Command Prompt", "PowerShell",
-                            "Website", "Teams", "Outlook", "MongoDB Compass",
-                            "GitHub Desktop", "Postman", "Notepad"]],
-                    width=150,
-                    bgcolor=self.Colors['gray'],
-                    border_color="transparent",
-                    color=self.Colors['dropdown_text'],
-                    text_style=ft.TextStyle(color=self.Colors['dropdown_text']),
-                    on_change=lambda e: self.update_item_type(item, e.control.value, index)
-                ),
-                
-                # URL/Path field
-                ft.Row([
-                    ft.TextField(
-                        value=item.get("path", ""),
-                        hint_text="URL (Optional)" if is_website else "Path/URL",
-                        width=120 if is_website else (140 if needs_folder_browse else 180),
-                        bgcolor=self.Colors['gray'],
-                        border_color="transparent",
-                        color=self.Colors['text'],
-                        text_size=13,
-                        on_change=lambda e: self.update_item_path(item, e.control.value)
-                    ),
-                    # Browse button for file types
-                    ft.IconButton(
-                        icon=ft.Icons.FOLDER_OPEN,
-                        tooltip="Browse Folder",
-                        icon_color=self.Colors['primary'],
-                        bgcolor=self.Colors['surface'],
-                        on_click=lambda e: self.browse_folder(item)
-                    ) if needs_folder_browse else ft.Container(width=0)
-                ], spacing=5),
-                
-                # Browser dropdown for websites
-                ft.Dropdown(
-                    value=item.get("browser", "chrome"),
-                    options=[ft.dropdown.Option(
-                        key=b,
-                        text=b.title(),
-                        text_style=ft.TextStyle(color="#A59E9E")
-                    ) for b in ["chrome", "edge", "brave", "firefox"]],
-                    width=130,
-                    bgcolor=self.Colors['gray'],
-                    border_color="transparent",
-                    color=self.Colors['dropdown_text'],
-                    text_style=ft.TextStyle(color=self.Colors['dropdown_text']),
-                    visible=is_website,
-                    on_change=lambda e: self.update_item_browser(item, e.control.value)
-                ) if is_website else ft.Container(width=80),
-                
-                # Incognito toggle for websites
-                ft.Container(
-                    content=ft.Row([
-                        ft.Icon(ft.Icons.VISIBILITY_OFF, size=16, color=self.Colors['subtext']),
-                        ft.Switch(
-                            value=item.get("incognito", False),
-                            scale=0.6,
-                            active_color=self.Colors['accent'],
-                            on_change=lambda e: self.update_item_incognito(item, e.control.value)
-                        )
-                    ], spacing=2),
-                    visible=is_website,
-                    tooltip="Incognito Mode"
-                ) if is_website else ft.Container(width=60),
-                
-                ft.Switch(
-                    value=enabled,
-                    scale=0.8,
-                    active_color=self.Colors['primary'],
-                    on_change=lambda e: self.update_item_enabled(item, e.control.value)
-                ),
-                ft.IconButton(
-                    icon=ft.Icons.PLAY_ARROW,
-                    tooltip="Launch",
-                    icon_color=self.Colors['primary'],
-                    bgcolor=self.Colors['surface'],
-                    on_click=lambda e: self.launch_single_item(item)
-                ),
-                ft.IconButton(
-                    icon=ft.Icons.DELETE_OUTLINE,
-                    tooltip="Delete",
-                    icon_color=self.Colors['danger'],
-                    bgcolor=self.Colors['surface'],
-                    on_click=lambda e: self.delete_item(index)
-                )
-            ], spacing=8),  # Reduced spacing to fit more controls
-            padding=10,
-            bgcolor=self.Colors['surface'] if enabled else self.Colors['gray'],
-            border_radius=9,
-            shadow=ft.BoxShadow(
-                spread_radius=0,
-                blur_radius=9,
-                color=self.Colors['shadow'],
-                offset=ft.Offset(0, 2)
-            ),
-            margin=ft.margin.only(bottom=5)
-        )
-    def renumber_items(self):
-        for i, item in enumerate(self.config.get("launch_items", []), start=1):
-            if item.get("name", "").startswith("New App"):
-                item["name"] = f"New App {i}"
-        self.config_manager.save_config(self.config)
-
     def browse_folder(self, item):
         self.current_item = item
         item_type = item.get("type", "")
@@ -415,7 +465,7 @@ class UIManager:
                 padding=ft.padding.symmetric(horizontal=8, vertical=8)
             ),
             ft.Container(
-                content=ft.Column([self.items_column], scroll=ft.ScrollMode.AUTO, expand=True),
+                content=self.create_reorderable_list(),  # ✅ Use ReorderableListView here
                 expand=True,
                 padding=ft.padding.symmetric(horizontal=12, vertical=0),
                 bgcolor=self.Colors['surface'],
@@ -426,16 +476,25 @@ class UIManager:
                 padding=10
             )
         ], spacing=14, expand=True)
+        
         self.page.add(main_content)
-        self.refresh_ui()
         self.page.update()
 
+
+    # def refresh_ui(self):
+    #     self.items_column.controls.clear()
+    #     launch_items = self.config.get("launch_items", [])
+    #     for i, item in enumerate(launch_items):
+    #         self.items_column.controls.append(self.create_app_row(item, i))
+    #     self.page.update()
+    
+
+
     def refresh_ui(self):
-        self.items_column.controls.clear()
-        launch_items = self.config.get("launch_items", [])
-        for i, item in enumerate(launch_items):
-            self.items_column.controls.append(self.create_app_row(item, i))
-        self.page.update()
+        # No need to manually clear and rebuild - ReorderableListView handles this
+        self.show_main_page()
+
+
 
     def filter_items(self, e):
         term = e.control.value.lower()
@@ -448,7 +507,15 @@ class UIManager:
     def update_status(self, msg, color=None):
         self.status_text.value = msg
         self.status_text.color = color or self.Colors['subtext']
-        self.status_text.update()
+        
+        # Only update if the control is currently on the page
+        try:
+            if hasattr(self.status_text, 'page') and self.status_text.page is not None:
+                self.status_text.update()
+        except AssertionError:
+            # Control not on page, skip individual update
+            pass
+
 
     def update_item_type(self, item, new_type, idx):
         item["type"] = new_type
@@ -472,24 +539,51 @@ class UIManager:
         launch_items = self.config.get("launch_items", [])
         if 0 <= index < len(launch_items):
             del launch_items[index]
-            self.renumber_items()   # 🔹 Re-number here
+            self.config_manager.save_config(self.config)
             self.refresh_ui()
             self.update_status("Deleted app.", self.Colors['danger'])
 
 
     def add_new_item(self, e):
+        # Get existing app names to find the next available number
+        launch_items = self.config.get("launch_items", [])
+        existing_names = [item.get("name", "") for item in launch_items]
+        
+        # Find the lowest available number
+        import re
+        used_numbers = []
+        for name in existing_names:
+            match = re.search(r"New App (\d+)", name)
+            if match:
+                used_numbers.append(int(match.group(1)))
+        
+        used_numbers.sort()
+        
+        # Find the smallest unused number starting from 1
+        next_number = 1
+        for num in used_numbers:
+            if num == next_number:
+                next_number += 1
+            elif num > next_number:
+                break
+        
         new_item = {
             "type": "VS Code",
-            "name": f"New App {len(self.config.get('launch_items', [])) + 1}",
+            "name": f"New App {next_number}",  # Use the lowest available number
             "path": "",
             "browser": "chrome",
             "incognito": False,
             "enabled": True
         }
+        
         self.config.setdefault("launch_items", []).append(new_item)
-        self.renumber_items()   # 🔹 Re-number after add
+
+        self.config_manager.save_config(self.config)
+        
         self.refresh_ui()
-        self.update_status("Added new app!", self.Colors['primary'])
+        self.update_status(f"Added New App {next_number}!", self.Colors['primary'])
+
+
 
 
     def launch_selected(self, e):
