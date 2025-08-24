@@ -126,9 +126,20 @@ class AppLauncher:
         return True
     
     def _launch_outlook(self):
-        """Launch Outlook"""
-        subprocess.Popen(["start", "outlook"], shell=True)
-        return True
+        """Launch Outlook (works with built-in or installed version)"""
+        try:
+            # Try Outlook protocol (UWP or installed Office)
+            subprocess.Popen("start outlookmail:", shell=True)
+            return True
+        except Exception:
+
+            # Try legacy Office executable (if exists)
+            subprocess.Popen("start outlook", shell=True)
+            return True
+        
+
+
+
     
     def _launch_mongodb(self):
         """Launch MongoDB Compass"""
@@ -173,9 +184,12 @@ class AppLauncher:
         target_processes = [
             "Code.exe", "explorer.exe", "cmd.exe", "powershell.exe",
             "chrome.exe", "msedge.exe", "brave.exe", "firefox.exe",
-            "notepad.exe", "notepad++.exe", "Teams.exe", "OUTLOOK.EXE",
-            "MongoDBCompass.exe", "GitHubDesktop.exe", "Postman.exe"
+            "notepad.exe", "Notepad.exe", "notepad++.exe", 
+            "Teams.exe", "OUTLOOK.EXE",
+            "MongoDBCompass.exe", "GitHubDesktop.exe", "Postman.exe",
+            "olk.exe","ms-teams.exe"
         ]
+
 
         for proc in psutil.process_iter(['pid', 'name']):
             try:
@@ -192,3 +206,4 @@ class AppLauncher:
                 pass
         
         return closed_count
+

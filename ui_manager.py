@@ -240,11 +240,15 @@ class UIManager:
         
         # Check if this is a website
         is_website = item.get("type", "") == "Website"
-        
+        icon_widget = (
+            ft.Image(src=app_icon, width=24, height=24)
+            if isinstance(app_icon, str) and app_icon.endswith(".png")
+            else ft.Text(app_icon, size=18)
+        )
         return ft.Container(
             content=ft.Row([
                 ft.Container(
-                    content=ft.Text(app_icon, size=18),
+                    content=icon_widget,
                     width=34, height=34,
                     bgcolor=self.Colors['gray'],
                     border_radius=7,
@@ -363,15 +367,11 @@ class UIManager:
             ),
             margin=ft.margin.only(bottom=5)
         )
-
-
-
-
-
-
-
-
-
+    def renumber_items(self):
+        for i, item in enumerate(self.config.get("launch_items", []), start=1):
+            if item.get("name", "").startswith("New App"):
+                item["name"] = f"New App {i}"
+        self.config_manager.save_config(self.config)
 
     def browse_folder(self, item):
         self.current_item = item
@@ -472,9 +472,10 @@ class UIManager:
         launch_items = self.config.get("launch_items", [])
         if 0 <= index < len(launch_items):
             del launch_items[index]
-            self.config_manager.save_config(self.config)
+            self.renumber_items()   # 🔹 Re-number here
             self.refresh_ui()
             self.update_status("Deleted app.", self.Colors['danger'])
+
 
     def add_new_item(self, e):
         new_item = {
@@ -486,9 +487,10 @@ class UIManager:
             "enabled": True
         }
         self.config.setdefault("launch_items", []).append(new_item)
-        self.config_manager.save_config(self.config)
+        self.renumber_items()   # 🔹 Re-number after add
         self.refresh_ui()
         self.update_status("Added new app!", self.Colors['primary'])
+
 
     def launch_selected(self, e):
         items = [i for i in self.config.get("launch_items", []) if i.get("enabled", True)]
