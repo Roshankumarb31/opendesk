@@ -636,18 +636,28 @@ class UIManager:
         else:
             self.update_status(f"Failed to launch {item.get('name', 'Unknown')}.", self.Colors['danger'])
 
+
     def toggle_startup(self, e):
         enable = e.control.value
+        
         if enable:
-            if self.startup_manager.add_to_startup():
-                self.update_status("Added to Windows startup.", self.Colors['primary'])
+            # Try Task Scheduler first (fastest), fallback to Registry
+            if self.startup_manager.add_startup_task():
+                self.update_status("Added to Windows startup (Task Scheduler).", self.Colors['primary'])
+            elif self.startup_manager.add_to_startup():
+                self.update_status("Added to Windows startup (Registry).", self.Colors['primary'])
             else:
                 self.update_status("Failed to add to startup.", self.Colors['danger'])
                 e.control.value = False
         else:
-            if self.startup_manager.remove_from_startup():
+            # Remove from both methods
+            task_removed = self.startup_manager.remove_startup_task()
+            registry_removed = self.startup_manager.remove_from_startup()
+            
+            if task_removed or registry_removed:
                 self.update_status("Removed from Windows startup.", self.Colors['accent'])
             else:
                 self.update_status("Failed to remove from startup.", self.Colors['danger'])
                 e.control.value = True
+        
         e.control.update()
